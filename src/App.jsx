@@ -20,7 +20,7 @@ function App() {
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      await fetch('/api/refresh');
+      await fetch(`/api/refresh?t=${Date.now()}`);
       // Wait for Make to process then reload data
       setTimeout(() => {
         setRefreshKey((k) => k + 1);
@@ -36,9 +36,10 @@ function App() {
     async function fetchData() {
       try {
         setLoading(true);
+        const ts = Date.now();
         const [accountsRes, transactionsRes] = await Promise.all([
-          fetch('/api/accounts'),
-          fetch('/api/transactions'),
+          fetch(`/api/accounts?t=${ts}`),
+          fetch(`/api/transactions?t=${ts}`),
         ]);
 
         if (!accountsRes.ok) throw new Error('Failed to fetch accounts');
