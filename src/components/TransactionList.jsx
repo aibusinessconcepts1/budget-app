@@ -25,6 +25,13 @@ function TransactionList({ transactions, accounts }) {
       </div>
 
       <table className="txn-table">
+        <colgroup>
+          <col style={{ width: '110px' }} />
+          <col />
+          <col style={{ width: '160px' }} />
+          <col style={{ width: '160px' }} />
+          <col style={{ width: '100px' }} />
+        </colgroup>
         <thead>
           <tr>
             <th>Date</th>
