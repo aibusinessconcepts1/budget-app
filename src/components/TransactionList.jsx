@@ -25,20 +25,13 @@ function TransactionList({ transactions, accounts }) {
       </div>
 
       <table className="txn-table">
-        <colgroup>
-          <col style={{ width: '110px' }} />
-          <col />
-          <col style={{ width: '160px' }} />
-          <col style={{ width: '160px' }} />
-          <col style={{ width: '100px' }} />
-        </colgroup>
         <thead>
           <tr>
-            <th>Date</th>
+            <th style={{ width: '110px' }}>Date</th>
             <th>Merchant</th>
-            <th>Category</th>
-            <th>Account</th>
-            <th className="right">Amount</th>
+            <th style={{ width: '160px' }}>Category</th>
+            <th style={{ width: '160px' }}>Account</th>
+            <th style={{ width: '100px', textAlign: 'right' }}>Amount</th>
           </tr>
         </thead>
         <tbody>
@@ -53,7 +46,7 @@ function TransactionList({ transactions, accounts }) {
                 <span className="category-tag">{txn.category}</span>
               </td>
               <td className="account-col">{getAccountName(txn.account_id)}</td>
-              <td className="right amount">${txn.amount.toFixed(2)}</td>
+              <td className="right amount" style={{ textAlign: 'right' }}>${txn.amount.toFixed(2)}</td>
             </tr>
           ))}
         </tbody>
