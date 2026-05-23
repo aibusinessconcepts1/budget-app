@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { usePlaidLink } from 'react-plaid-link';
 
 const EXCHANGE_WEBHOOK = 'https://hook.us1.make.com/ojtth1kjrrmpzinfxn4m2fna2eanuc5k';
@@ -7,20 +7,6 @@ function ConnectButton({ onConnected }) {
   const [linkToken, setLinkToken] = useState(null);
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState('');
-
-  const fetchLinkToken = async () => {
-    setLoading(true);
-    setStatus('Getting link token...');
-    try {
-      const res = await fetch('/api/link-token');
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
-      setLinkToken(data.link_token);
-    } catch (err) {
-      setStatus('Error: ' + err.message);
-      setLoading(false);
-    }
-  };
 
   const onSuccess = useCallback(async (public_token) => {
     setStatus('Saving connection...');
@@ -51,16 +37,32 @@ function ConnectButton({ onConnected }) {
     onExit,
   });
 
-  // Auto-open Plaid Link once we have the token
-  if (linkToken && ready) {
-    open();
-  }
+  // Open Plaid Link as soon as we have a token and it's ready
+  useEffect(() => {
+    if (linkToken && ready) {
+      open();
+    }
+  }, [linkToken, ready, open]);
+
+  const handleClick = async () => {
+    setLoading(true);
+    setStatus('Getting link token...');
+    try {
+      const res = await fetch('/api/link-token');
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setLinkToken(data.link_token);
+    } catch (err) {
+      setStatus('Error: ' + err.message);
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="connect-button-wrap">
       <button
         className="connect-btn"
-        onClick={fetchLinkToken}
+        onClick={handleClick}
         disabled={loading}
       >
         {loading ? 'Connecting...' : '+ Connect Bank'}
