@@ -10,10 +10,17 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedAccountId, setSelectedAccountId] = useState('all');
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const handleConnected = () => {
+    // Wait a few seconds for Make to process, then refresh data
+    setTimeout(() => setRefreshKey((k) => k + 1), 4000);
+  };
 
   useEffect(() => {
     async function fetchData() {
       try {
+        setLoading(true);
         const [accountsRes, transactionsRes] = await Promise.all([
           fetch('/api/accounts'),
           fetch('/api/transactions'),
@@ -35,7 +42,7 @@ function App() {
     }
 
     fetchData();
-  }, []);
+  }, [refreshKey]);
 
   const selectedAccount = accounts.find((a) => a.account_id === selectedAccountId);
 
@@ -66,6 +73,7 @@ function App() {
         accounts={accounts}
         selectedAccountId={selectedAccountId}
         onSelectAccount={setSelectedAccountId}
+        onConnected={handleConnected}
       />
 
       <main className="main-content">

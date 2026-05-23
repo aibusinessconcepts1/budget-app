@@ -1,4 +1,6 @@
-function AccountSidebar({ accounts, selectedAccountId, onSelectAccount }) {
+import ConnectButton from './ConnectButton';
+
+function AccountSidebar({ accounts, selectedAccountId, onSelectAccount, onConnected }) {
   // Group accounts by institution
   const byInstitution = accounts.reduce((groups, account) => {
     const key = account.institution_name;
@@ -40,7 +42,7 @@ function AccountSidebar({ accounts, selectedAccountId, onSelectAccount }) {
       </nav>
 
       <div className="sidebar-footer">
-        <button className="connect-btn">+ Connect Bank</button>
+        <ConnectButton onConnected={onConnected} />
       </div>
     </aside>
   );

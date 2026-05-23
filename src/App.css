@@ -358,6 +358,19 @@ body {
   font-size: 14px;
 }
 
+/* ── Connect button ── */
+.connect-button-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.connect-status {
+  font-size: 12px;
+  color: #6b7280;
+  text-align: center;
+}
+
 /* ── Loading screen ── */
 .loading-screen {
   display: flex;
