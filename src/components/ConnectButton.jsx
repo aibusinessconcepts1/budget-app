@@ -45,10 +45,13 @@ function ConnectButton({ onConnected }) {
   }, [linkToken, ready, open]);
 
   const handleClick = async () => {
+    console.log('Connect button clicked');
     setLoading(true);
     setStatus('Getting link token...');
     try {
+      console.log('Fetching link token...');
       const res = await fetch('/api/link-token');
+      console.log('Response status:', res.status);
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setLinkToken(data.link_token);
