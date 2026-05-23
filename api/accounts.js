@@ -1,6 +1,7 @@
 import { google } from 'googleapis';
 
 export default async function handler(req, res) {
+  res.setHeader('Cache-Control', 'no-store');
   try {
     const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_KEY);
     const spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID;
