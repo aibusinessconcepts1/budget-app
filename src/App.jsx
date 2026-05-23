@@ -4,17 +4,34 @@ import TransactionList from './components/TransactionList';
 import RollupView from './components/RollupView';
 import './App.css';
 
+const FETCH_TRANSACTIONS_WEBHOOK = 'https://hook.us1.make.com/qo20stbnt4iz38r1nu78y4oxlgu3plog';
+
 function App() {
   const [accounts, setAccounts] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [selectedAccountId, setSelectedAccountId] = useState('all');
   const [refreshKey, setRefreshKey] = useState(0);
 
   const handleConnected = () => {
-    // Wait a few seconds for Make to process, then refresh data
     setTimeout(() => setRefreshKey((k) => k + 1), 4000);
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await fetch(FETCH_TRANSACTIONS_WEBHOOK);
+      // Wait for Make to process then reload data
+      setTimeout(() => {
+        setRefreshKey((k) => k + 1);
+        setRefreshing(false);
+      }, 4000);
+    } catch (err) {
+      console.error('Refresh error:', err);
+      setRefreshing(false);
+    }
   };
 
   useEffect(() => {
@@ -83,7 +100,13 @@ function App() {
               ? 'All Accounts'
               : selectedAccount?.name || 'Account'}
           </h1>
-          <span className="month-label">May 2026</span>
+          <button
+            className="refresh-btn"
+            onClick={handleRefresh}
+            disabled={refreshing}
+          >
+            {refreshing ? 'Refreshing...' : '↻ Refresh Transactions'}
+          </button>
         </header>
 
         {selectedAccountId === 'all' ? (
