@@ -4,8 +4,6 @@ import TransactionList from './components/TransactionList';
 import RollupView from './components/RollupView';
 import './App.css';
 
-const FETCH_TRANSACTIONS_WEBHOOK = 'https://hook.us1.make.com/qo20stbnt4iz38r1nu78y4oxlgu3plog';
-
 function App() {
   const [accounts, setAccounts] = useState([]);
   const [transactions, setTransactions] = useState([]);
@@ -22,7 +20,7 @@ function App() {
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      await fetch(FETCH_TRANSACTIONS_WEBHOOK);
+      await fetch('/api/refresh');
       // Wait for Make to process then reload data
       setTimeout(() => {
         setRefreshKey((k) => k + 1);
