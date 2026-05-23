@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Connect Bank</title>
+  <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
+</head>
+<body>
+  <button id="btn">Connect Bank Account</button>
+  <p id="status" style="font-family:sans-serif;color:#666"></p>
+
+  <script>
+    const S1 = 'https://hook.us1.make.com/9dls5rswpwkdnijvf6ttowx3d3st78pl';
+    const S2 = 'https://hook.us1.make.com/ojtth1kjrrmpzinfxn4m2fna2eanuc5k';
+
+    document.getElementById('btn').addEventListener('click', async () => {
+      const status = document.getElementById('status');
+
+      try {
+        status.textContent = 'Getting link token...';
+
+        const res = await fetch(S1, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        const { link_token } = await res.json();
+
+        status.textContent = 'Opening Plaid...';
+
+        Plaid.create({
+          token: link_token,
+          onSuccess: async (public_token, metadata) => {
+            status.textContent = 'Saving connection...';
+            await fetch(S2, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ public_token })
+            });
+            status.textContent = '✓ Bank connected! Check your Google Sheet.';
+          },
+          onExit: (err) => {
+            status.textContent = err ? 'Error: ' + err.display_message : 'Cancelled.';
+          }
+        }).open();
+
+      } catch (err) {
+        status.textContent = 'Error: ' + err.message;
+        console.error(err);
+      }
+    });
+  </script>
+</body>
+</html>
