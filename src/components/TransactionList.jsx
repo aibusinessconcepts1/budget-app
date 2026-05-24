@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { formatAmount } from '../utils';
 
 function TransactionList({ transactions, accounts, categories }) {
   const [editingId, setEditingId] = useState(null);
@@ -87,7 +88,7 @@ function TransactionList({ transactions, accounts, categories }) {
     <div className="transaction-list">
       <div className="list-summary">
         <span>{filtered.length} transactions</span>
-        <span className="total-spend">${totalSpend.toFixed(2)} spent</span>
+        <span className="total-spend">{formatAmount(totalSpend)} spent</span>
       </div>
 
       <table className="txn-table">
@@ -146,7 +147,7 @@ function TransactionList({ transactions, accounts, categories }) {
                 </select>
               </td>
               <td className="account-col">{getAccountName(txn.account_id)}</td>
-              <td className="right amount" style={{ textAlign: 'right' }}>${txn.amount.toFixed(2)}</td>
+              <td className="right amount" style={{ textAlign: 'right' }}>{formatAmount(txn.amount)}</td>
             </tr>
           ))}
         </tbody>

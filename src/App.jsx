@@ -15,6 +15,7 @@ function App() {
   const [selectedAccountId, setSelectedAccountId] = useState('all');
   const [refreshKey, setRefreshKey] = useState(0);
   const [showCategories, setShowCategories] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState('all');
 
   const handleConnected = () => {
     setTimeout(() => setRefreshKey((k) => k + 1), 4000);
@@ -69,12 +70,40 @@ function App() {
     fetchData();
   }, [refreshKey]);
 
+  // Deduplicate transactions
+  const seen = new Set();
+  const uniqueTransactions = transactions.filter((t) => {
+    if (seen.has(t.transaction_id)) return false;
+    seen.add(t.transaction_id);
+    return true;
+  });
+
+  // Derive available months from transactions
+  const availableMonths = [...new Set(
+    uniqueTransactions
+      .map((t) => t.date?.slice(0, 7))
+      .filter(Boolean)
+  )].sort().reverse();
+
+  // Filter by account
+  const accountFiltered =
+    selectedAccountId === 'all'
+      ? uniqueTransactions
+      : uniqueTransactions.filter((t) => t.account_id === selectedAccountId);
+
+  // Filter by month
+  const monthFiltered =
+    selectedMonth === 'all'
+      ? accountFiltered
+      : accountFiltered.filter((t) => t.date?.startsWith(selectedMonth));
+
   const selectedAccount = accounts.find((a) => a.account_id === selectedAccountId);
 
-  const visibleTransactions =
-    selectedAccountId === 'all'
-      ? transactions
-      : transactions.filter((t) => t.account_id === selectedAccountId);
+  const monthLabel = (month) => {
+    if (month === 'all') return 'All Time';
+    const [year, m] = month.split('-');
+    return new Date(year, m - 1).toLocaleString('default', { month: 'long', year: 'numeric' });
+  };
 
   if (loading) {
     return (
@@ -109,6 +138,16 @@ function App() {
               : selectedAccount?.name || 'Account'}
           </h1>
           <div className="header-actions">
+            <select
+              className="month-select"
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(e.target.value)}
+            >
+              <option value="all">All Time</option>
+              {availableMonths.map((m) => (
+                <option key={m} value={m}>{monthLabel(m)}</option>
+              ))}
+            </select>
             <button
               className="categories-btn"
               onClick={() => setShowCategories(true)}
@@ -126,11 +165,11 @@ function App() {
         </header>
 
         {selectedAccountId === 'all' ? (
-          <RollupView transactions={transactions} accounts={accounts} />
+          <RollupView transactions={monthFiltered} accounts={accounts} />
         ) : null}
 
         <TransactionList
-          transactions={visibleTransactions}
+          transactions={monthFiltered}
           accounts={accounts}
           categories={categories}
         />

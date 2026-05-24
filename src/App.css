@@ -156,6 +156,22 @@ body {
   align-items: center;
 }
 
+.month-select {
+  padding: 8px 12px;
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.month-select:focus {
+  outline: none;
+  border-color: #7c3aed;
+}
+
 .categories-btn {
   padding: 8px 16px;
   background: #f3f4f6;
@@ -340,11 +356,44 @@ body {
   box-shadow: 0 1px 3px rgba(0,0,0,0.08);
 }
 
+.rollup-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
 .rollup-section h3 {
   font-size: 14px;
   font-weight: 600;
   color: #374151;
-  margin-bottom: 16px;
+  margin-bottom: 0;
+}
+
+.category-toggle {
+  display: flex;
+  gap: 4px;
+  background: #f3f4f6;
+  border-radius: 6px;
+  padding: 3px;
+}
+
+.toggle-btn {
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  background: transparent;
+  color: #6b7280;
+  transition: all 0.15s;
+}
+
+.toggle-btn.active {
+  background: #fff;
+  color: #7c3aed;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
 }
 
 .category-list {
