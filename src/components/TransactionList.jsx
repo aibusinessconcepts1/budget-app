@@ -4,8 +4,18 @@ function TransactionList({ transactions, accounts }) {
     return account ? account.name : accountId;
   };
 
-  // Filter out transfers for display
-  const filtered = transactions.filter((t) => t.category !== 'Transfer');
+  // Deduplicate by transaction_id
+  const seen = new Set();
+  const unique = transactions.filter((t) => {
+    if (seen.has(t.transaction_id)) return false;
+    seen.add(t.transaction_id);
+    return true;
+  });
+
+  // Filter out transfers and sort newest first
+  const filtered = unique
+    .filter((t) => t.category !== 'Transfer')
+    .sort((a, b) => new Date(b.date) - new Date(a.date));
 
   const totalSpend = filtered.reduce((sum, t) => sum + t.amount, 0);
 

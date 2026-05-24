@@ -1,6 +1,14 @@
 function RollupView({ transactions, accounts }) {
+  // Deduplicate by transaction_id
+  const seen = new Set();
+  const unique = transactions.filter((t) => {
+    if (seen.has(t.transaction_id)) return false;
+    seen.add(t.transaction_id);
+    return true;
+  });
+
   // Filter out transfers to avoid double-counting
-  const filtered = transactions.filter((t) => t.category !== 'Transfer');
+  const filtered = unique.filter((t) => t.category !== 'Transfer');
 
   const totalSpend = filtered.reduce((sum, t) => sum + t.amount, 0);
 
