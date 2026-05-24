@@ -33,7 +33,7 @@ function AccountSidebar({ accounts, selectedAccountId, onSelectAccount, onConnec
                 className={`account-item ${selectedAccountId === account.account_id ? 'active' : ''}`}
                 onClick={() => onSelectAccount(account.account_id)}
               >
-                <span className="account-name">{account.name}</span>
+                <span className="account-name">{account.official_name || account.name}</span>
                 <span className="account-mask">••{account.mask}</span>
               </button>
             ))}

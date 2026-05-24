@@ -2,16 +2,19 @@ import { useState, useEffect } from 'react';
 import AccountSidebar from './components/AccountSidebar';
 import TransactionList from './components/TransactionList';
 import RollupView from './components/RollupView';
+import CategoriesPanel from './components/CategoriesPanel';
 import './App.css';
 
 function App() {
   const [accounts, setAccounts] = useState([]);
   const [transactions, setTransactions] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [selectedAccountId, setSelectedAccountId] = useState('all');
   const [refreshKey, setRefreshKey] = useState(0);
+  const [showCategories, setShowCategories] = useState(false);
 
   const handleConnected = () => {
     setTimeout(() => setRefreshKey((k) => k + 1), 4000);
@@ -21,7 +24,6 @@ function App() {
     setRefreshing(true);
     try {
       await fetch(`/api/refresh?t=${Date.now()}`);
-      // Wait for Make to process then reload data
       setTimeout(() => {
         setRefreshKey((k) => k + 1);
         setRefreshing(false);
@@ -32,14 +34,19 @@ function App() {
     }
   };
 
+  const handleAddCategory = (name) => {
+    setCategories((prev) => [...prev, name]);
+  };
+
   useEffect(() => {
     async function fetchData() {
       try {
         setLoading(true);
         const ts = Date.now();
-        const [accountsRes, transactionsRes] = await Promise.all([
+        const [accountsRes, transactionsRes, categoriesRes] = await Promise.all([
           fetch(`/api/accounts?t=${ts}`),
           fetch(`/api/transactions?t=${ts}`),
+          fetch(`/api/categories?t=${ts}`),
         ]);
 
         if (!accountsRes.ok) throw new Error('Failed to fetch accounts');
@@ -47,9 +54,11 @@ function App() {
 
         const accountsData = await accountsRes.json();
         const transactionsData = await transactionsRes.json();
+        const categoriesData = categoriesRes.ok ? await categoriesRes.json() : [];
 
         setAccounts(accountsData);
         setTransactions(transactionsData);
+        setCategories(categoriesData);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -99,13 +108,21 @@ function App() {
               ? 'All Accounts'
               : selectedAccount?.name || 'Account'}
           </h1>
-          <button
-            className="refresh-btn"
-            onClick={handleRefresh}
-            disabled={refreshing}
-          >
-            {refreshing ? 'Refreshing...' : '↻ Refresh Transactions'}
-          </button>
+          <div className="header-actions">
+            <button
+              className="categories-btn"
+              onClick={() => setShowCategories(true)}
+            >
+              ☰ Categories
+            </button>
+            <button
+              className="refresh-btn"
+              onClick={handleRefresh}
+              disabled={refreshing}
+            >
+              {refreshing ? 'Refreshing...' : '↻ Refresh'}
+            </button>
+          </div>
         </header>
 
         {selectedAccountId === 'all' ? (
@@ -115,8 +132,17 @@ function App() {
         <TransactionList
           transactions={visibleTransactions}
           accounts={accounts}
+          categories={categories}
         />
       </main>
+
+      {showCategories && (
+        <CategoriesPanel
+          categories={categories}
+          onAdd={handleAddCategory}
+          onClose={() => setShowCategories(false)}
+        />
+      )}
     </div>
   );
 }

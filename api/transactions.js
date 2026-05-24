@@ -15,7 +15,7 @@ export default async function handler(req, res) {
 
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: 'Transactions!A2:G',
+      range: 'Transactions!A2:H',
     });
 
     const rows = response.data.values || [];
@@ -28,6 +28,7 @@ export default async function handler(req, res) {
       merchant_name: row[4] || '',
       category: row[5] || '',
       pending: row[6] === 'true' || row[6] === 'TRUE',
+      user_category: row[7] || '',
     }));
 
     res.status(200).json(transactions);
