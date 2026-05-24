@@ -50,7 +50,7 @@ function CategoriesPanel({ categories, onAdd, onClose }) {
         {categories.length === 0 && (
           <p className="categories-empty">No categories yet. Add one above.</p>
         )}
-        {categories.map((cat) => (
+        {[...categories].sort((a, b) => a.localeCompare(b)).map((cat) => (
           <div key={cat} className="category-item">
             <span>{cat}</span>
           </div>

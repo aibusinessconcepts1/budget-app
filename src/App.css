@@ -519,7 +519,7 @@ body {
   color: #374151;
   cursor: pointer;
   width: 100%;
-  max-width: 150px;
+  max-width: 300px;
 }
 
 .category-select:focus {

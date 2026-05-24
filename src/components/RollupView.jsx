@@ -10,10 +10,15 @@ function RollupView({ transactions, accounts }) {
   const totalSpend = filtered.reduce((sum, t) => sum + t.amount, 0);
 
   // Spend by category — toggle between user category and Plaid category
-  const byCategory = filtered.reduce((groups, txn) => {
+  const categorySource =
+    categoryType === 'user'
+      ? filtered.filter((t) => t.user_category)
+      : filtered;
+
+  const byCategory = categorySource.reduce((groups, txn) => {
     const cat =
       categoryType === 'user'
-        ? txn.user_category || txn.category || 'Uncategorised'
+        ? txn.user_category
         : txn.category || 'Other';
     if (!groups[cat]) groups[cat] = { total: 0, count: 0 };
     groups[cat].total += txn.amount;

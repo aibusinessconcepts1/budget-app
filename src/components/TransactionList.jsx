@@ -9,7 +9,7 @@ function TransactionList({ transactions, accounts, categories }) {
 
   const getAccountName = (accountId) => {
     const account = accounts.find((a) => a.account_id === accountId);
-    return account ? account.name : accountId;
+    return account ? (account.official_name || account.name) : accountId;
   };
 
   // Deduplicate by transaction_id
@@ -97,7 +97,7 @@ function TransactionList({ transactions, accounts, categories }) {
             <th style={{ width: '110px' }}>Date</th>
             <th style={{ width: '180px' }}>Merchant</th>
             <th style={{ width: '140px' }}>Plaid Category</th>
-            <th style={{ width: '160px' }}>My Category</th>
+            <th style={{ width: '320px' }}>My Category</th>
             <th style={{ width: '150px' }}>Account</th>
             <th style={{ width: '100px', textAlign: 'right' }}>Amount</th>
           </tr>
@@ -141,7 +141,7 @@ function TransactionList({ transactions, accounts, categories }) {
                   onChange={(e) => handleCategoryChange(txn, e.target.value)}
                 >
                   <option value="">-- Select --</option>
-                  {categories.map((cat) => (
+                  {[...categories].sort((a, b) => a.localeCompare(b)).map((cat) => (
                     <option key={cat} value={cat}>{cat}</option>
                   ))}
                 </select>
