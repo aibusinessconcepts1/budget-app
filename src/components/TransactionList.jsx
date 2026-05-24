@@ -94,12 +94,12 @@ function TransactionList({ transactions, accounts, categories }) {
       <table className="txn-table">
         <thead>
           <tr>
-            <th style={{ width: '110px' }}>Date</th>
-            <th style={{ width: '180px' }}>Merchant</th>
-            <th style={{ width: '140px' }}>Plaid Category</th>
-            <th style={{ width: '320px' }}>My Category</th>
-            <th style={{ width: '150px' }}>Account</th>
-            <th style={{ width: '100px', textAlign: 'right' }}>Amount</th>
+            <th style={{ width: '90px' }}>Date</th>
+            <th style={{ width: '150px' }}>Merchant</th>
+            <th style={{ width: '120px' }}>Plaid Category</th>
+            <th style={{ width: '200px' }}>My Category</th>
+            <th style={{ width: '130px' }}>Account</th>
+            <th style={{ width: '90px', textAlign: 'right' }}>Amount</th>
           </tr>
         </thead>
         <tbody>

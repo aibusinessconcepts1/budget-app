@@ -229,7 +229,7 @@ body {
 
 .txn-table {
   width: 100%;
-  min-width: 900px;
+  min-width: 780px;
   border-collapse: collapse;
   table-layout: fixed;
   background: #fff;
@@ -525,7 +525,7 @@ body {
   color: #374151;
   cursor: pointer;
   width: 100%;
-  max-width: 300px;
+  max-width: 190px;
 }
 
 .category-select:focus {
