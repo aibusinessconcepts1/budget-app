@@ -210,6 +210,10 @@ body {
 }
 
 /* ── Transaction list ── */
+.transaction-list {
+  overflow-x: auto;
+}
+
 .list-summary {
   display: flex;
   justify-content: space-between;
@@ -225,7 +229,9 @@ body {
 
 .txn-table {
   width: 100%;
+  min-width: 900px;
   border-collapse: collapse;
+  table-layout: fixed;
   background: #fff;
   border-radius: 10px;
   overflow: hidden;
