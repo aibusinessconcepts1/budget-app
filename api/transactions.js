@@ -15,7 +15,7 @@ export default async function handler(req, res) {
 
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: 'Transactions!A2:I',
+      range: 'Transactions!A2:J',
     });
 
     const rows = response.data.values || [];
@@ -30,6 +30,7 @@ export default async function handler(req, res) {
       pending: row[6] === 'true' || row[6] === 'TRUE',
       user_category: row[7] || '',
       date_loaded: row[8] || '',
+      pending_transaction_id: row[9] || '',
     }));
 
     res.status(200).json(transactions);

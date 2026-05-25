@@ -105,9 +105,22 @@ function App() {
     return true;
   });
 
+  // Remove pending transactions that have since settled.
+  // When Plaid settles a pending txn it creates a new transaction whose
+  // pending_transaction_id points back to the old pending row's transaction_id.
+  // We collect all those superseded IDs and exclude them from the display.
+  const supersededIds = new Set(
+    uniqueTransactions
+      .map((t) => t.pending_transaction_id)
+      .filter(Boolean)
+  );
+  const activeTransactions = uniqueTransactions.filter(
+    (t) => !supersededIds.has(t.transaction_id)
+  );
+
   // Derive available months from transactions
   const availableMonths = [...new Set(
-    uniqueTransactions
+    activeTransactions
       .map((t) => t.date?.slice(0, 7))
       .filter(Boolean)
   )].sort().reverse();
@@ -115,8 +128,8 @@ function App() {
   // Filter by account
   const accountFiltered =
     selectedAccountId === 'all'
-      ? uniqueTransactions
-      : uniqueTransactions.filter((t) => t.account_id === selectedAccountId);
+      ? activeTransactions
+      : activeTransactions.filter((t) => t.account_id === selectedAccountId);
 
   // Filter by month
   const monthFiltered =
