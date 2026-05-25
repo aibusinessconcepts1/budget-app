@@ -1,35 +1,54 @@
 import { useState } from 'react';
 import { formatAmount } from '../utils';
 
+const isInternalTransfer = (t) => {
+  const cat = (t.category || '').toLowerCase();
+  return cat.includes('transfer') || cat.includes('loan');
+};
+
 function RollupView({ transactions, accounts }) {
   const [categoryType, setCategoryType] = useState('user');
+  const [showTransfers, setShowTransfers] = useState(false);
 
-  // Filter out transfers to avoid double-counting
-  const filtered = transactions.filter((t) => t.category !== 'Transfer');
+  // Deduplicate
+  const seen = new Set();
+  const unique = transactions.filter((t) => {
+    if (seen.has(t.transaction_id)) return false;
+    seen.add(t.transaction_id);
+    return true;
+  });
 
-  const totalSpend = filtered.reduce((sum, t) => sum + t.amount, 0);
+  // Split into internal transfers vs real transactions
+  const internalTransfers = unique.filter(isInternalTransfer);
+  const nonTransfers = unique.filter((t) => !isInternalTransfer(t));
 
-  // Spend by category — toggle between user category and Plaid category
-  const categorySource =
-    categoryType === 'user'
-      ? filtered.filter((t) => t.user_category)
-      : filtered;
+  // Split into income (negative = money in) and expenses (positive = money out)
+  const income = nonTransfers.filter((t) => t.amount < 0);
+  const expenses = nonTransfers.filter((t) => t.amount > 0);
+
+  const totalIncome = Math.abs(income.reduce((sum, t) => sum + t.amount, 0));
+  const totalExpenses = expenses.reduce((sum, t) => sum + t.amount, 0);
+  const net = totalIncome - totalExpenses;
+
+  // Spend by category (expenses only)
+  const categorySource = categoryType === 'user'
+    ? expenses.filter((t) => t.user_category)
+    : expenses;
 
   const byCategory = categorySource.reduce((groups, txn) => {
-    const cat =
-      categoryType === 'user'
-        ? txn.user_category
-        : txn.category || 'Other';
+    const cat = categoryType === 'user'
+      ? txn.user_category
+      : txn.category || 'Other';
     if (!groups[cat]) groups[cat] = { total: 0, count: 0 };
     groups[cat].total += txn.amount;
     groups[cat].count += 1;
     return groups;
   }, {});
 
-  const categories = Object.entries(byCategory).sort((a, b) => b[1].total - a[1].total);
+  const categories = Object.entries(byCategory).sort((a, b) => a[0].localeCompare(b[0]));
 
-  // Spend by account
-  const byAccount = filtered.reduce((groups, txn) => {
+  // Spend by account (expenses only)
+  const byAccount = expenses.reduce((groups, txn) => {
     const account = accounts.find((a) => a.account_id === txn.account_id);
     const key = account ? (account.official_name || account.name) : txn.account_id;
     if (!groups[key]) groups[key] = 0;
@@ -47,16 +66,22 @@ function RollupView({ transactions, accounts }) {
     <div className="rollup-view">
       <div className="rollup-header">
         <div className="rollup-stat">
-          <span className="stat-label">Total Spend</span>
-          <span className="stat-value">{formatAmount(totalSpend)}</span>
+          <span className="stat-label">Income</span>
+          <span className="stat-value income">{formatAmount(totalIncome)}</span>
+        </div>
+        <div className="rollup-stat">
+          <span className="stat-label">Expenses</span>
+          <span className="stat-value expenses">{formatAmount(totalExpenses)}</span>
+        </div>
+        <div className="rollup-stat">
+          <span className="stat-label">Net</span>
+          <span className={`stat-value ${net >= 0 ? 'income' : 'expenses'}`}>
+            {formatAmount(net)}
+          </span>
         </div>
         <div className="rollup-stat">
           <span className="stat-label">Transactions</span>
-          <span className="stat-value">{filtered.length.toLocaleString()}</span>
-        </div>
-        <div className="rollup-stat">
-          <span className="stat-label">Accounts</span>
-          <span className="stat-value">{accounts.length}</span>
+          <span className="stat-value">{nonTransfers.length.toLocaleString()}</span>
         </div>
       </div>
 
@@ -80,13 +105,18 @@ function RollupView({ transactions, accounts }) {
             </div>
           </div>
           <div className="category-list">
+            {categories.length === 0 && (
+              <p style={{ fontSize: '13px', color: '#9ca3af' }}>
+                {categoryType === 'user' ? 'No transactions with My Categories assigned yet.' : 'No data.'}
+              </p>
+            )}
             {categories.map(([cat, data], i) => (
               <div key={cat} className="category-row">
                 <div className="category-bar-wrap">
                   <div
                     className="category-bar"
                     style={{
-                      width: `${(data.total / totalSpend) * 100}%`,
+                      width: `${(data.total / totalExpenses) * 100}%`,
                       background: CATEGORY_COLORS[i % CATEGORY_COLORS.length],
                     }}
                   />
@@ -108,7 +138,7 @@ function RollupView({ transactions, accounts }) {
                   <div
                     className="category-bar"
                     style={{
-                      width: `${(total / totalSpend) * 100}%`,
+                      width: `${(total / totalExpenses) * 100}%`,
                       background: CATEGORY_COLORS[i % CATEGORY_COLORS.length],
                     }}
                   />
@@ -119,6 +149,40 @@ function RollupView({ transactions, accounts }) {
             ))}
           </div>
         </div>
+      </div>
+
+      {/* Internal Transfers section */}
+      <div className="transfers-section">
+        <button
+          className="transfers-toggle"
+          onClick={() => setShowTransfers((v) => !v)}
+        >
+          {showTransfers ? '▾' : '▸'} Internal Transfers ({internalTransfers.length})
+        </button>
+        {showTransfers && (
+          <table className="transfers-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Description</th>
+                <th>Category</th>
+                <th style={{ textAlign: 'right' }}>Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              {internalTransfers
+                .sort((a, b) => new Date(b.date) - new Date(a.date))
+                .map((txn) => (
+                  <tr key={txn.transaction_id}>
+                    <td>{txn.date}</td>
+                    <td>{txn.merchant_name}</td>
+                    <td>{txn.category}</td>
+                    <td style={{ textAlign: 'right' }}>{formatAmount(txn.amount)}</td>
+                  </tr>
+                ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );
