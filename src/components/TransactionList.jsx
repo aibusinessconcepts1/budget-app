@@ -20,11 +20,11 @@ function TransactionList({ transactions, accounts, categories }) {
     return true;
   });
 
-  // Filter out internal transfers and sort newest first
+  // Filter out loan payments (credit card payments) and sort newest first
   const filtered = unique
     .filter((t) => {
       const cat = (t.category || '').toLowerCase();
-      return !cat.includes('transfer') && !cat.includes('loan');
+      return !cat.includes('loan');
     })
     .sort((a, b) => new Date(b.date) - new Date(a.date));
 

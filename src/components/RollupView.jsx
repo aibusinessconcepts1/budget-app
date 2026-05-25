@@ -3,7 +3,7 @@ import { formatAmount } from '../utils';
 
 const isInternalTransfer = (t) => {
   const cat = (t.category || '').toLowerCase();
-  return cat.includes('transfer') || cat.includes('loan');
+  return cat.includes('loan');
 };
 
 function RollupView({ transactions, accounts }) {
@@ -46,6 +46,17 @@ function RollupView({ transactions, accounts }) {
   }, {});
 
   const categories = Object.entries(byCategory).sort((a, b) => a[0].localeCompare(b[0]));
+
+  // Income by category
+  const byIncomeCategory = income.reduce((groups, txn) => {
+    const cat = txn.user_category || txn.category || 'Other';
+    if (!groups[cat]) groups[cat] = { total: 0, count: 0 };
+    groups[cat].total += Math.abs(txn.amount);
+    groups[cat].count += 1;
+    return groups;
+  }, {});
+
+  const incomeCategories = Object.entries(byIncomeCategory).sort((a, b) => a[0].localeCompare(b[0]));
 
   // Spend by account (expenses only)
   const byAccount = expenses.reduce((groups, txn) => {
@@ -148,6 +159,32 @@ function RollupView({ transactions, accounts }) {
               </div>
             ))}
           </div>
+        </div>
+      </div>
+
+      {/* Income by Category */}
+      <div className="rollup-section" style={{ marginBottom: '16px' }}>
+        <h3>Income by Category</h3>
+        <div className="category-list">
+          {incomeCategories.length === 0 && (
+            <p style={{ fontSize: '13px', color: '#9ca3af' }}>No income transactions found.</p>
+          )}
+          {incomeCategories.map(([cat, data], i) => (
+            <div key={cat} className="category-row">
+              <div className="category-bar-wrap">
+                <div
+                  className="category-bar"
+                  style={{
+                    width: `${(data.total / totalIncome) * 100}%`,
+                    background: CATEGORY_COLORS[i % CATEGORY_COLORS.length],
+                  }}
+                />
+              </div>
+              <span className="category-name">{cat}</span>
+              <span className="category-count">{data.count} txns</span>
+              <span className="category-amount">{formatAmount(data.total)}</span>
+            </div>
+          ))}
         </div>
       </div>
 
