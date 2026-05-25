@@ -3,9 +3,73 @@ import { formatAmount } from '../utils';
 
 const INCOME_CATEGORIES = ['Income - Jon', 'Income - Janette', 'Rewards', 'Other'];
 
+const CATEGORY_COLORS = [
+  '#1a2744', '#c9a84c', '#2d6a9f', '#1a7a5e',
+  '#8b4c8c', '#c0392b', '#2980b9', '#16a085',
+  '#d35400', '#6c5ce7',
+];
+
+// Simple read-only transaction table used in drill-down
+function DrillDownTable({ transactions, accounts, title, onBack }) {
+  const getAccountName = (accountId) => {
+    const account = accounts.find((a) => a.account_id === accountId);
+    return account ? (account.official_name || account.name) : accountId;
+  };
+
+  const total = transactions.reduce((sum, t) => sum + t.amount, 0);
+
+  return (
+    <div>
+      <div className="drilldown-header">
+        <button className="drilldown-back" onClick={onBack}>
+          ← Back
+        </button>
+        <span className="drilldown-title">{title}</span>
+        <span className="drilldown-subtitle">
+          {transactions.length} transactions · {formatAmount(Math.abs(total))}
+        </span>
+      </div>
+
+      <div className="transaction-list">
+        <table className="txn-table">
+          <thead>
+            <tr>
+              <th style={{ width: '100px' }}>Date</th>
+              <th>Merchant</th>
+              <th style={{ width: '160px' }}>Plaid Category</th>
+              <th style={{ width: '160px' }}>My Category</th>
+              <th style={{ width: '150px' }}>Account</th>
+              <th style={{ width: '100px', textAlign: 'right' }}>Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            {transactions
+              .sort((a, b) => new Date(b.date) - new Date(a.date))
+              .map((txn) => (
+                <tr key={txn.transaction_id} className={txn.pending ? 'pending' : ''}>
+                  <td className="date">{txn.date}</td>
+                  <td className="merchant">{txn.merchant_name}
+                    {txn.pending && <span className="pending-badge">Pending</span>}
+                  </td>
+                  <td><span className="category-tag">{txn.category}</span></td>
+                  <td style={{ fontSize: '13px', color: '#7a8ba8' }}>{txn.user_category || '—'}</td>
+                  <td className="account-col">{getAccountName(txn.account_id)}</td>
+                  <td className="right amount" style={{ textAlign: 'right' }}>
+                    {formatAmount(txn.amount)}
+                  </td>
+                </tr>
+              ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 function RollupView({ transactions, accounts }) {
   const [categoryType, setCategoryType] = useState('user');
   const [showTransfers, setShowTransfers] = useState(false);
+  const [drillDown, setDrillDown] = useState(null); // { title, txns }
 
   // Deduplicate
   const seen = new Set();
@@ -68,46 +132,58 @@ function RollupView({ transactions, accounts }) {
     ? [...expenses, ...expenseOffsets].filter((t) => t.user_category)
     : [...expenses, ...expenseOffsets];
 
-  const byCategory = categorySource.reduce((groups, txn) => {
+  // Build map: category -> { total, count, txns }
+  const byCategoryMap = categorySource.reduce((groups, txn) => {
     const cat = categoryType === 'user'
       ? txn.user_category
       : txn.category || 'Other';
-    if (!groups[cat]) groups[cat] = { total: 0, count: 0 };
-    groups[cat].total += txn.amount; // negative offsets reduce the total
+    if (!groups[cat]) groups[cat] = { total: 0, count: 0, txns: [] };
+    groups[cat].total += txn.amount;
     groups[cat].count += 1;
+    groups[cat].txns.push(txn);
     return groups;
   }, {});
 
   // Filter out zero or negative totals and sort alphabetically
-  const categories = Object.entries(byCategory)
+  const categories = Object.entries(byCategoryMap)
     .filter(([, data]) => data.total > 0)
     .sort((a, b) => a[0].localeCompare(b[0]));
 
   // Income by category (only in user mode)
-  const byIncomeCategory = income.reduce((groups, txn) => {
+  const byIncomeCategoryMap = income.reduce((groups, txn) => {
     const cat = txn.user_category || 'Other';
-    if (!groups[cat]) groups[cat] = { total: 0, count: 0 };
+    if (!groups[cat]) groups[cat] = { total: 0, count: 0, txns: [] };
     groups[cat].total += Math.abs(txn.amount);
     groups[cat].count += 1;
+    groups[cat].txns.push(txn);
     return groups;
   }, {});
 
-  const incomeCategories = Object.entries(byIncomeCategory).sort((a, b) => a[0].localeCompare(b[0]));
+  const incomeCategories = Object.entries(byIncomeCategoryMap).sort((a, b) => a[0].localeCompare(b[0]));
 
   // Spend by account (expenses only, net of offsets)
   const byAccount = [...expenses, ...expenseOffsets].reduce((groups, txn) => {
     const account = accounts.find((a) => a.account_id === txn.account_id);
     const key = account ? (account.official_name || account.name) : txn.account_id;
-    if (!groups[key]) groups[key] = 0;
-    groups[key] += txn.amount;
+    if (!groups[key]) groups[key] = { total: 0, txns: [] };
+    groups[key].total += txn.amount;
+    groups[key].txns.push(txn);
     return groups;
   }, {});
 
-  const CATEGORY_COLORS = [
-    '#7c3aed', '#f97316', '#06b6d4', '#10b981',
-    '#ef4444', '#f59e0b', '#8b5cf6', '#ec4899',
-    '#14b8a6', '#6366f1',
-  ];
+  // ── Drill-down active ──
+  if (drillDown) {
+    return (
+      <div className="rollup-view">
+        <DrillDownTable
+          transactions={drillDown.txns}
+          accounts={accounts}
+          title={drillDown.title}
+          onBack={() => setDrillDown(null)}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="rollup-view">
@@ -153,12 +229,17 @@ function RollupView({ transactions, accounts }) {
           </div>
           <div className="category-list">
             {categories.length === 0 && (
-              <p style={{ fontSize: '13px', color: '#9ca3af' }}>
+              <p style={{ fontSize: '13px', color: '#b0bac8' }}>
                 {categoryType === 'user' ? 'No transactions with My Categories assigned yet.' : 'No data.'}
               </p>
             )}
             {categories.map(([cat, data], i) => (
-              <div key={cat} className="category-row">
+              <div
+                key={cat}
+                className="category-row"
+                onClick={() => setDrillDown({ title: cat, txns: data.txns })}
+                title="Click to view transactions"
+              >
                 <div className="category-bar-wrap">
                   <div
                     className="category-bar"
@@ -177,23 +258,28 @@ function RollupView({ transactions, accounts }) {
         </div>
 
         <div className="rollup-section">
-          <h3>Spend by Account</h3>
+          <h3 style={{ marginBottom: '16px' }}>Spend by Account</h3>
           <div className="category-list">
             {Object.entries(byAccount)
-              .filter(([, total]) => total > 0)
-              .map(([name, total], i) => (
-                <div key={name} className="category-row">
+              .filter(([, data]) => data.total > 0)
+              .map(([name, data], i) => (
+                <div
+                  key={name}
+                  className="category-row"
+                  onClick={() => setDrillDown({ title: name, txns: data.txns })}
+                  title="Click to view transactions"
+                >
                   <div className="category-bar-wrap">
                     <div
                       className="category-bar"
                       style={{
-                        width: `${(total / netExpenses) * 100}%`,
+                        width: `${(data.total / netExpenses) * 100}%`,
                         background: CATEGORY_COLORS[i % CATEGORY_COLORS.length],
                       }}
                     />
                   </div>
                   <span className="category-name">{name}</span>
-                  <span className="category-amount">{formatAmount(total)}</span>
+                  <span className="category-amount">{formatAmount(data.total)}</span>
                 </div>
               ))}
           </div>
@@ -203,15 +289,20 @@ function RollupView({ transactions, accounts }) {
       {/* Income by Category — only in My Categories mode */}
       {categoryType === 'user' && (
         <div className="rollup-section" style={{ marginBottom: '16px' }}>
-          <h3>Income by Category</h3>
+          <h3 style={{ marginBottom: '16px' }}>Income by Category</h3>
           <div className="category-list">
             {incomeCategories.length === 0 && (
-              <p style={{ fontSize: '13px', color: '#9ca3af' }}>
+              <p style={{ fontSize: '13px', color: '#b0bac8' }}>
                 No income transactions categorised yet. Use the 4 income categories: {INCOME_CATEGORIES.join(', ')}.
               </p>
             )}
             {incomeCategories.map(([cat, data], i) => (
-              <div key={cat} className="category-row">
+              <div
+                key={cat}
+                className="category-row"
+                onClick={() => setDrillDown({ title: cat, txns: data.txns })}
+                title="Click to view transactions"
+              >
                 <div className="category-bar-wrap">
                   <div
                     className="category-bar"
