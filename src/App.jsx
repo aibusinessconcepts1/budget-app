@@ -16,9 +16,35 @@ function App() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [showCategories, setShowCategories] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState('all');
+  const [lastRefreshed, setLastRefreshed] = useState(() => {
+    return localStorage.getItem('budget_last_refreshed') || null;
+  });
+
+  const saveRefreshTime = () => {
+    const now = new Date().toISOString();
+    localStorage.setItem('budget_last_refreshed', now);
+    setLastRefreshed(now);
+  };
+
+  const formatRefreshTime = (iso) => {
+    if (!iso) return null;
+    const d = new Date(iso);
+    const today = new Date();
+    const isToday =
+      d.getDate() === today.getDate() &&
+      d.getMonth() === today.getMonth() &&
+      d.getFullYear() === today.getFullYear();
+    const time = d.toLocaleTimeString('default', { hour: 'numeric', minute: '2-digit' });
+    if (isToday) return `Refreshed today at ${time}`;
+    const date = d.toLocaleDateString('default', { month: 'short', day: 'numeric' });
+    return `Refreshed ${date} at ${time}`;
+  };
 
   const handleConnected = () => {
-    setTimeout(() => setRefreshKey((k) => k + 1), 4000);
+    setTimeout(() => {
+      setRefreshKey((k) => k + 1);
+      saveRefreshTime();
+    }, 4000);
   };
 
   const handleRefresh = async () => {
@@ -28,6 +54,7 @@ function App() {
       setTimeout(() => {
         setRefreshKey((k) => k + 1);
         setRefreshing(false);
+        saveRefreshTime();
       }, 4000);
     } catch (err) {
       console.error('Refresh error:', err);
@@ -116,7 +143,7 @@ function App() {
   if (error) {
     return (
       <div className="loading-screen">
-        <p style={{ color: '#ef4444' }}>Error: {error}</p>
+        <p style={{ color: '#c0392b' }}>Error: {error}</p>
       </div>
     );
   }
@@ -154,13 +181,18 @@ function App() {
             >
               ☰ Categories
             </button>
-            <button
-              className="refresh-btn"
-              onClick={handleRefresh}
-              disabled={refreshing}
-            >
-              {refreshing ? 'Refreshing...' : '↻ Refresh'}
-            </button>
+            <div className="refresh-wrap">
+              {lastRefreshed && (
+                <span className="refresh-timestamp">{formatRefreshTime(lastRefreshed)}</span>
+              )}
+              <button
+                className="refresh-btn"
+                onClick={handleRefresh}
+                disabled={refreshing}
+              >
+                {refreshing ? 'Refreshing...' : '↻ Refresh'}
+              </button>
+            </div>
           </div>
         </header>
 
