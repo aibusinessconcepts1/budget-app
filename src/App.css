@@ -19,8 +19,8 @@ body {
 
 /* ── Sidebar ── */
 .sidebar {
-  width: 240px;
-  min-width: 240px;
+  width: 280px;
+  min-width: 280px;
   background: #1a2744;
   border-right: none;
   display: flex;
@@ -107,6 +107,186 @@ body {
   color: rgba(255,255,255,0.7);
   padding: 2px 6px;
   border-radius: 4px;
+}
+
+.account-balance {
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.balance-positive {
+  color: #6ee7b7;
+}
+
+.balance-negative {
+  color: #fca5a5;
+}
+
+.nav-item {
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.nav-icon {
+  font-size: 14px;
+  opacity: 0.7;
+  margin-right: 4px;
+  flex-shrink: 0;
+}
+
+.sidebar-divider {
+  height: 1px;
+  background: rgba(255,255,255,0.08);
+  margin: 6px 16px;
+}
+
+/* ── Manual accounts ── */
+.manual-accounts-section {
+  padding-bottom: 8px;
+}
+
+.manual-accounts-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px 4px;
+}
+
+.manual-add-btn {
+  background: rgba(255,255,255,0.12);
+  border: none;
+  color: rgba(255,255,255,0.7);
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+
+.manual-add-btn:hover {
+  background: rgba(255,255,255,0.2);
+  color: #fff;
+}
+
+.manual-add-form {
+  padding: 8px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.manual-input {
+  padding: 6px 8px;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 6px;
+  color: #fff;
+  font-size: 12px;
+  font-family: 'Inter', sans-serif;
+  outline: none;
+  width: 100%;
+}
+
+.manual-input::placeholder {
+  color: rgba(255,255,255,0.4);
+}
+
+.manual-input:focus {
+  border-color: rgba(255,255,255,0.35);
+}
+
+.manual-input option {
+  background: #1a2744;
+  color: #fff;
+}
+
+.manual-save-btn {
+  padding: 6px;
+  background: #c9a84c;
+  color: #1a2744;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+}
+
+.manual-account-item {
+  position: relative;
+}
+
+.manual-balance-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.manual-balance-edit {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.manual-balance-input {
+  width: 70px;
+  padding: 2px 5px;
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 4px;
+  color: #fff;
+  font-size: 12px;
+  font-family: 'Inter', sans-serif;
+  outline: none;
+}
+
+.manual-balance-save {
+  background: #c9a84c;
+  color: #1a2744;
+  border: none;
+  border-radius: 3px;
+  padding: 2px 5px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.manual-balance-cancel {
+  background: rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.7);
+  border: none;
+  border-radius: 3px;
+  padding: 2px 5px;
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.manual-delete-btn {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.25);
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0 2px;
+  transition: color 0.15s;
+}
+
+.manual-delete-btn:hover {
+  color: #fca5a5;
+}
+
+.manual-empty {
+  font-size: 11px;
+  color: rgba(255,255,255,0.3);
+  padding: 4px 16px 8px;
+  font-style: italic;
 }
 
 .sidebar-footer {
@@ -477,7 +657,7 @@ body {
 
 .category-row {
   display: grid;
-  grid-template-columns: 1fr auto auto auto;
+  grid-template-columns: auto auto auto 1fr;
   align-items: center;
   gap: 12px;
   cursor: pointer;

@@ -240,6 +240,9 @@ function RollupView({ transactions, accounts }) {
                 onClick={() => setDrillDown({ title: cat, txns: data.txns })}
                 title="Click to view transactions"
               >
+                <span className="category-name">{cat}</span>
+                <span className="category-count">{data.count} txns</span>
+                <span className="category-amount">{formatAmount(data.total)}</span>
                 <div className="category-bar-wrap">
                   <div
                     className="category-bar"
@@ -249,9 +252,6 @@ function RollupView({ transactions, accounts }) {
                     }}
                   />
                 </div>
-                <span className="category-name">{cat}</span>
-                <span className="category-count">{data.count} txns</span>
-                <span className="category-amount">{formatAmount(data.total)}</span>
               </div>
             ))}
           </div>
@@ -269,6 +269,8 @@ function RollupView({ transactions, accounts }) {
                   onClick={() => setDrillDown({ title: name, txns: data.txns })}
                   title="Click to view transactions"
                 >
+                  <span className="category-name">{name}</span>
+                  <span className="category-amount">{formatAmount(data.total)}</span>
                   <div className="category-bar-wrap">
                     <div
                       className="category-bar"
@@ -278,8 +280,6 @@ function RollupView({ transactions, accounts }) {
                       }}
                     />
                   </div>
-                  <span className="category-name">{name}</span>
-                  <span className="category-amount">{formatAmount(data.total)}</span>
                 </div>
               ))}
           </div>
@@ -303,6 +303,9 @@ function RollupView({ transactions, accounts }) {
                 onClick={() => setDrillDown({ title: cat, txns: data.txns })}
                 title="Click to view transactions"
               >
+                <span className="category-name">{cat}</span>
+                <span className="category-count">{data.count} txns</span>
+                <span className="category-amount">{formatAmount(data.total)}</span>
                 <div className="category-bar-wrap">
                   <div
                     className="category-bar"
@@ -312,9 +315,6 @@ function RollupView({ transactions, accounts }) {
                     }}
                   />
                 </div>
-                <span className="category-name">{cat}</span>
-                <span className="category-count">{data.count} txns</span>
-                <span className="category-amount">{formatAmount(data.total)}</span>
               </div>
             ))}
           </div>
