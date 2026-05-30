@@ -330,7 +330,14 @@ function App() {
         </header>
 
         {selectedView === 'dashboard' && (
-          <RollupView transactions={monthFiltered} accounts={accounts} />
+          <RollupView
+            transactions={monthFiltered}
+            accounts={accounts}
+            allTransactions={activeTransactions}
+            plaidBalances={balances}
+            manualAccounts={manualAccounts}
+            selectedMonth={selectedMonth}
+          />
         )}
 
         {selectedView !== 'dashboard' && (

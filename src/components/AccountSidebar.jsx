@@ -1,13 +1,11 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import ConnectButton from './ConnectButton';
 
 function formatBalance(amount, type) {
   if (amount === null || amount === undefined) return null;
   const formatted = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
+    style: 'currency', currency: 'USD',
+    minimumFractionDigits: 0, maximumFractionDigits: 0,
   }).format(Math.abs(amount));
   if (type === 'credit' && amount > 0) return `-${formatted}`;
   return formatted;
@@ -21,160 +19,100 @@ function formatUpdatedTime(date) {
     date.getMonth() === today.getMonth() &&
     date.getFullYear() === today.getFullYear();
   const time = date.toLocaleTimeString('default', { hour: 'numeric', minute: '2-digit' });
-  return isToday ? `Today ${time}` : date.toLocaleDateString('default', { month: 'short', day: 'numeric' }) + ' ' + time;
+  return isToday
+    ? `Today ${time}`
+    : date.toLocaleDateString('default', { month: 'short', day: 'numeric' }) + ' ' + time;
 }
 
-function ManualAccountsSection({
-  manualAccounts,
-  selectedView,
-  onSelectView,
-  onAdd,
-  onUpdateBalance,
-  onDelete,
+const isLiability = (type) => ['credit', 'mortgage', 'loan'].includes(type);
+
+function AccountSidebar({
+  accounts, balances, balancesUpdatedAt,
+  manualAccounts, selectedView, onSelectView, onConnected,
+  onAddManualAccount, onUpdateManualBalance, onDeleteManualAccount,
 }) {
+  // ── Drag state ──
+  const [dragId, setDragId] = useState(null);
+  const [dragOverId, setDragOverId] = useState(null);
+  const [orderIds, setOrderIds] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('budget_account_order') || '[]'); }
+    catch { return []; }
+  });
+
+  // ── Add manual form ──
   const [adding, setAdding] = useState(false);
   const [newName, setNewName] = useState('');
   const [newBalance, setNewBalance] = useState('');
   const [newType, setNewType] = useState('savings');
+
+  // ── Balance edit (manual accounts) ──
   const [editingId, setEditingId] = useState(null);
   const [editValue, setEditValue] = useState('');
 
-  const handleAdd = async () => {
-    if (!newName.trim()) return;
-    await onAdd(newName.trim(), newBalance, newType);
-    setNewName('');
-    setNewBalance('');
-    setNewType('savings');
-    setAdding(false);
-  };
-
-  const startEdit = (acct) => {
-    setEditingId(acct.account_id);
-    setEditValue(String(acct.balance));
-  };
-
-  const saveEdit = async (account_id) => {
-    await onUpdateBalance(account_id, editValue);
-    setEditingId(null);
-  };
-
-  const isLiability = (type) => ['credit', 'mortgage', 'loan'].includes(type);
-
-  return (
-    <div className="manual-accounts-section">
-      <div className="manual-accounts-header">
-        <span className="institution-name">Manual Accounts</span>
-        <button className="manual-add-btn" onClick={() => setAdding((v) => !v)} title="Add account">
-          {adding ? '✕' : '+'}
-        </button>
-      </div>
-
-      {adding && (
-        <div className="manual-add-form">
-          <input
-            className="manual-input"
-            placeholder="Account name"
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-          />
-          <input
-            className="manual-input"
-            placeholder="Balance"
-            type="number"
-            value={newBalance}
-            onChange={(e) => setNewBalance(e.target.value)}
-          />
-          <select
-            className="manual-input"
-            value={newType}
-            onChange={(e) => setNewType(e.target.value)}
-          >
-            <option value="savings">Savings</option>
-            <option value="checking">Checking</option>
-            <option value="credit">Credit Card</option>
-            <option value="investment">Investment</option>
-            <option value="mortgage">Mortgage</option>
-            <option value="loan">Loan</option>
-            <option value="other">Other</option>
-          </select>
-          <button className="manual-save-btn" onClick={handleAdd}>Add</button>
-        </div>
-      )}
-
-      {manualAccounts.map((acct) => (
-        <div
-          key={acct.account_id}
-          className={`account-item manual-account-item ${selectedView === acct.account_id ? 'active' : ''}`}
-        >
-          <div className="account-item-inner" onClick={() => onSelectView(acct.account_id)} style={{ cursor: 'pointer', flex: 1, minWidth: 0 }}>
-            <span className="account-name">{acct.name}</span>
-            {acct.last_updated && (
-              <span className="balance-updated">Updated {acct.last_updated}</span>
-            )}
-          </div>
-
-          {editingId === acct.account_id ? (
-            <div className="manual-balance-edit">
-              <input
-                className="manual-balance-input"
-                type="number"
-                value={editValue}
-                onChange={(e) => setEditValue(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') saveEdit(acct.account_id);
-                  if (e.key === 'Escape') setEditingId(null);
-                }}
-                autoFocus
-              />
-              <button className="manual-balance-save" onClick={() => saveEdit(acct.account_id)}>✓</button>
-              <button className="manual-balance-cancel" onClick={() => setEditingId(null)}>✕</button>
-            </div>
-          ) : (
-            <div className="manual-balance-wrap">
-              <span
-                className={`account-balance ${isLiability(acct.type) ? 'balance-negative' : 'balance-positive'}`}
-                onClick={() => startEdit(acct)}
-                title="Click to update balance"
-              >
-                {formatBalance(acct.balance, acct.type) ?? '—'}
-              </span>
-              <button
-                className="manual-delete-btn"
-                onClick={() => onDelete(acct.account_id)}
-                title="Remove account"
-              >×</button>
-            </div>
-          )}
-        </div>
-      ))}
-
-      {manualAccounts.length === 0 && !adding && (
-        <p className="manual-empty">No manual accounts. Click + to add.</p>
-      )}
-    </div>
-  );
-}
-
-function AccountSidebar({
-  accounts,
-  balances,
-  balancesUpdatedAt,
-  manualAccounts,
-  selectedView,
-  onSelectView,
-  onConnected,
-  onAddManualAccount,
-  onUpdateManualBalance,
-  onDeleteManualAccount,
-}) {
   const updatedLabel = formatUpdatedTime(balancesUpdatedAt);
 
-  const byInstitution = accounts.reduce((groups, account) => {
-    const key = account.institution_name || 'Other';
-    if (!groups[key]) groups[key] = [];
-    groups[key].push(account);
-    return groups;
-  }, {});
+  // ── Unified flat list ──
+  const allItems = useMemo(() => [
+    ...accounts.map((a) => ({
+      ...a,
+      source: 'plaid',
+      display_name: a.official_name || a.name,
+      subtitle: a.institution_name || '',
+    })),
+    ...manualAccounts.map((a) => ({
+      ...a,
+      source: 'manual',
+      display_name: a.name,
+      subtitle: a.type || '',
+    })),
+  ], [accounts, manualAccounts]);
+
+  const orderedItems = useMemo(() => {
+    if (orderIds.length === 0) return allItems;
+    return [...allItems].sort((a, b) => {
+      const ai = orderIds.indexOf(a.account_id);
+      const bi = orderIds.indexOf(b.account_id);
+      if (ai === -1 && bi === -1) return 0;
+      if (ai === -1) return 1;
+      if (bi === -1) return -1;
+      return ai - bi;
+    });
+  }, [allItems, orderIds]);
+
+  // ── Drag handlers ──
+  const handleDragStart = (e, id) => {
+    setDragId(id);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+  const handleDragOver = (e, id) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (id !== dragId) setDragOverId(id);
+  };
+  const handleDrop = (e, targetId) => {
+    e.preventDefault();
+    if (!dragId || dragId === targetId) { setDragId(null); setDragOverId(null); return; }
+    const items = [...orderedItems];
+    const from = items.findIndex((a) => a.account_id === dragId);
+    const to = items.findIndex((a) => a.account_id === targetId);
+    const [moved] = items.splice(from, 1);
+    items.splice(to, 0, moved);
+    const ids = items.map((a) => a.account_id);
+    setOrderIds(ids);
+    localStorage.setItem('budget_account_order', JSON.stringify(ids));
+    setDragId(null);
+    setDragOverId(null);
+  };
+  const handleDragEnd = () => { setDragId(null); setDragOverId(null); };
+
+  // ── Manual account actions ──
+  const handleAdd = async () => {
+    if (!newName.trim()) return;
+    await onAddManualAccount(newName.trim(), newBalance, newType);
+    setNewName(''); setNewBalance(''); setNewType('savings'); setAdding(false);
+  };
+  const startEdit = (acct) => { setEditingId(acct.account_id); setEditValue(String(acct.balance)); };
+  const saveEdit = async (id) => { await onUpdateManualBalance(id, editValue); setEditingId(null); };
 
   return (
     <aside className="sidebar">
@@ -183,7 +121,7 @@ function AccountSidebar({
       </div>
 
       <nav className="account-list">
-        {/* Dashboard */}
+        {/* Navigation items */}
         <button
           className={`account-item nav-item ${selectedView === 'dashboard' ? 'active' : ''}`}
           onClick={() => onSelectView('dashboard')}
@@ -191,8 +129,6 @@ function AccountSidebar({
           <span className="nav-icon">◈</span>
           <span className="account-name">Dashboard</span>
         </button>
-
-        {/* All Transactions */}
         <button
           className={`account-item nav-item ${selectedView === 'transactions' ? 'active' : ''}`}
           onClick={() => onSelectView('transactions')}
@@ -203,54 +139,147 @@ function AccountSidebar({
 
         <div className="sidebar-divider" />
 
-        {/* Plaid accounts grouped by institution */}
-        {Object.entries(byInstitution).map(([institution, accts]) => (
-          <div key={institution} className="institution-group">
-            <div className="institution-name">{institution}</div>
-            {accts.map((account) => {
-              const bal = balances[account.account_id];
-              const rawAmount = account.type === 'credit'
-                ? bal?.current
-                : (bal?.available ?? bal?.current);
-              const displayBal = bal ? formatBalance(rawAmount, account.type) : null;
+        {/* Flat draggable account list */}
+        {orderedItems.map((item) => {
+          const isDragging = dragId === item.account_id;
+          const isDragOver = dragOverId === item.account_id;
 
-              return (
+          if (item.source === 'plaid') {
+            const bal = balances[item.account_id];
+            const rawAmount = item.type === 'credit'
+              ? bal?.current
+              : (bal?.available ?? bal?.current);
+            const displayBal = bal != null ? formatBalance(rawAmount, item.type) : null;
+
+            return (
+              <div
+                key={item.account_id}
+                className={`account-item-wrap ${isDragOver ? 'drag-over' : ''} ${isDragging ? 'dragging' : ''}`}
+                onDragOver={(e) => handleDragOver(e, item.account_id)}
+                onDrop={(e) => handleDrop(e, item.account_id)}
+              >
+                <span
+                  className="drag-handle"
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, item.account_id)}
+                  onDragEnd={handleDragEnd}
+                  title="Drag to reorder"
+                >⠿</span>
                 <button
-                  key={account.account_id}
-                  className={`account-item ${selectedView === account.account_id ? 'active' : ''}`}
-                  onClick={() => onSelectView(account.account_id)}
+                  className={`account-item account-item-inner-btn ${selectedView === item.account_id ? 'active' : ''}`}
+                  onClick={() => onSelectView(item.account_id)}
                 >
-                  <div className="account-item-inner" style={{ flex: 1, minWidth: 0 }}>
-                    <span className="account-name">{account.official_name || account.name}</span>
+                  <div className="account-item-inner">
+                    <span className="account-name">{item.display_name}</span>
+                    <span className="account-subtitle">{item.subtitle}</span>
                     {displayBal !== null && updatedLabel && (
                       <span className="balance-updated">{updatedLabel}</span>
                     )}
                     {displayBal === null && (
-                      <span className="account-mask">••{account.mask}</span>
+                      <span className="account-mask">••{item.mask}</span>
                     )}
                   </div>
                   {displayBal !== null && (
-                    <span className={`account-balance ${account.type === 'credit' ? 'balance-negative' : 'balance-positive'}`}>
+                    <span className={`account-balance ${item.type === 'credit' ? 'balance-negative' : 'balance-positive'}`}>
                       {displayBal}
                     </span>
                   )}
                 </button>
-              );
-            })}
-          </div>
-        ))}
+              </div>
+            );
+          }
 
-        <div className="sidebar-divider" />
+          // Manual account
+          return (
+            <div
+              key={item.account_id}
+              className={`account-item-wrap ${isDragOver ? 'drag-over' : ''} ${isDragging ? 'dragging' : ''}`}
+              onDragOver={(e) => handleDragOver(e, item.account_id)}
+              onDrop={(e) => handleDrop(e, item.account_id)}
+            >
+              <span
+                className="drag-handle"
+                draggable
+                onDragStart={(e) => handleDragStart(e, item.account_id)}
+                onDragEnd={handleDragEnd}
+                title="Drag to reorder"
+              >⠿</span>
+              <div className={`account-item account-item-inner-btn ${selectedView === item.account_id ? 'active' : ''}`}
+                style={{ flex: 1, minWidth: 0 }}>
+                <div
+                  className="account-item-inner"
+                  onClick={() => onSelectView(item.account_id)}
+                  style={{ cursor: 'pointer', flex: 1, minWidth: 0 }}
+                >
+                  <span className="account-name">{item.display_name}</span>
+                  <span className="account-subtitle">{item.subtitle}</span>
+                  {item.last_updated && (
+                    <span className="balance-updated">Updated {item.last_updated}</span>
+                  )}
+                </div>
+                {editingId === item.account_id ? (
+                  <div className="manual-balance-edit">
+                    <input
+                      className="manual-balance-input"
+                      type="number"
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') saveEdit(item.account_id);
+                        if (e.key === 'Escape') setEditingId(null);
+                      }}
+                      autoFocus
+                    />
+                    <button className="manual-balance-save" onClick={() => saveEdit(item.account_id)}>✓</button>
+                    <button className="manual-balance-cancel" onClick={() => setEditingId(null)}>✕</button>
+                  </div>
+                ) : (
+                  <div className="manual-balance-wrap">
+                    <span
+                      className={`account-balance ${isLiability(item.type) ? 'balance-negative' : 'balance-positive'}`}
+                      onClick={() => startEdit(item)}
+                      title="Click to update balance"
+                    >
+                      {formatBalance(item.balance, item.type) ?? '—'}
+                    </span>
+                    <button
+                      className="manual-delete-btn"
+                      onClick={() => onDeleteManualAccount(item.account_id)}
+                      title="Remove"
+                    >×</button>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
 
-        {/* Manual accounts */}
-        <ManualAccountsSection
-          manualAccounts={manualAccounts}
-          selectedView={selectedView}
-          onSelectView={onSelectView}
-          onAdd={onAddManualAccount}
-          onUpdateBalance={onUpdateManualBalance}
-          onDelete={onDeleteManualAccount}
-        />
+        {/* Add manual account */}
+        <div className="manual-add-section">
+          {!adding ? (
+            <button className="manual-add-trigger" onClick={() => setAdding(true)}>
+              + Add manual account
+            </button>
+          ) : (
+            <div className="manual-add-form">
+              <input className="manual-input" placeholder="Account name" value={newName} onChange={(e) => setNewName(e.target.value)} />
+              <input className="manual-input" placeholder="Balance" type="number" value={newBalance} onChange={(e) => setNewBalance(e.target.value)} />
+              <select className="manual-input" value={newType} onChange={(e) => setNewType(e.target.value)}>
+                <option value="savings">Savings</option>
+                <option value="checking">Checking</option>
+                <option value="credit">Credit Card</option>
+                <option value="investment">Investment</option>
+                <option value="mortgage">Mortgage</option>
+                <option value="loan">Loan</option>
+                <option value="other">Other</option>
+              </select>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <button className="manual-save-btn" style={{ flex: 1 }} onClick={handleAdd}>Add</button>
+                <button className="manual-cancel-btn" onClick={() => setAdding(false)}>Cancel</button>
+              </div>
+            </div>
+          )}
+        </div>
       </nav>
 
       <div className="sidebar-footer">
