@@ -20,6 +20,16 @@ function App() {
     return localStorage.getItem('budget_last_refreshed') || null;
   });
 
+  // Default refresh range: last 30 days
+  const todayStr = () => new Date().toISOString().slice(0, 10);
+  const thirtyDaysAgoStr = () => {
+    const d = new Date();
+    d.setDate(d.getDate() - 30);
+    return d.toISOString().slice(0, 10);
+  };
+  const [refreshStart, setRefreshStart] = useState(thirtyDaysAgoStr);
+  const [refreshEnd, setRefreshEnd] = useState(todayStr);
+
   const saveRefreshTime = () => {
     const now = new Date().toISOString();
     localStorage.setItem('budget_last_refreshed', now);
@@ -50,7 +60,11 @@ function App() {
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      await fetch(`/api/refresh?t=${Date.now()}`);
+      await fetch(`/api/refresh?t=${Date.now()}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ start_date: refreshStart, end_date: refreshEnd }),
+      });
       setTimeout(() => {
         setRefreshKey((k) => k + 1);
         setRefreshing(false);
@@ -195,6 +209,22 @@ function App() {
               ☰ Categories
             </button>
             <div className="refresh-wrap">
+              <span className="refresh-range-label">Fetch</span>
+              <input
+                type="date"
+                className="refresh-date-input"
+                value={refreshStart}
+                onChange={(e) => setRefreshStart(e.target.value)}
+                disabled={refreshing}
+              />
+              <span className="refresh-range-label">to</span>
+              <input
+                type="date"
+                className="refresh-date-input"
+                value={refreshEnd}
+                onChange={(e) => setRefreshEnd(e.target.value)}
+                disabled={refreshing}
+              />
               {lastRefreshed && (
                 <span className="refresh-timestamp">{formatRefreshTime(lastRefreshed)}</span>
               )}
