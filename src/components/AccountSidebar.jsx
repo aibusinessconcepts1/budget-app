@@ -30,13 +30,13 @@ function AccountSidebar({
   accounts, balances, balancesUpdatedAt,
   manualAccounts, selectedView, onSelectView, onConnected,
   onAddManualAccount, onUpdateManualBalance, onDeleteManualAccount,
-  onRemoveInstitution,
+  onRemoveAccount,
 }) {
   // ── Drag state ──
   const [dragId, setDragId] = useState(null);
   const [dragOverId, setDragOverId] = useState(null);
-  // ── Remove institution confirmation ──
-  const [confirmRemoveItemId, setConfirmRemoveItemId] = useState(null);
+  // ── Remove account confirmation ──
+  const [confirmRemoveAccountId, setConfirmRemoveAccountId] = useState(null);
   const [orderIds, setOrderIds] = useState(() => {
     try { return JSON.parse(localStorage.getItem('budget_account_order') || '[]'); }
     catch { return []; }
@@ -188,26 +188,26 @@ function AccountSidebar({
                     </span>
                   )}
                 </button>
-                {confirmRemoveItemId === item.item_id ? (
+                {confirmRemoveAccountId === item.account_id ? (
                   <div className="plaid-confirm-remove">
                     <span className="plaid-confirm-label">Remove?</span>
                     <button
                       className="plaid-confirm-yes"
                       onClick={() => {
-                        onRemoveInstitution(item.item_id);
-                        setConfirmRemoveItemId(null);
+                        onRemoveAccount(item.account_id);
+                        setConfirmRemoveAccountId(null);
                       }}
                     >Yes</button>
                     <button
                       className="plaid-confirm-no"
-                      onClick={() => setConfirmRemoveItemId(null)}
+                      onClick={() => setConfirmRemoveAccountId(null)}
                     >No</button>
                   </div>
                 ) : (
                   <button
                     className="plaid-remove-btn"
-                    onClick={() => setConfirmRemoveItemId(item.item_id)}
-                    title="Remove this bank connection"
+                    onClick={() => setConfirmRemoveAccountId(item.account_id)}
+                    title="Remove this account"
                   >×</button>
                 )}
               </div>

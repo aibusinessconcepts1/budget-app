@@ -150,16 +150,16 @@ function App() {
     }
   };
 
-  const handleRemoveInstitution = async (item_id) => {
+  const handleRemoveAccount = async (account_id) => {
     try {
-      await fetch('/api/remove-institution', {
+      await fetch('/api/remove-account', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ item_id }),
+        body: JSON.stringify({ account_id }),
       });
       setRefreshKey((k) => k + 1);
     } catch (err) {
-      console.error('Remove institution error:', err);
+      console.error('Remove account error:', err);
     }
   };
 
@@ -287,7 +287,7 @@ function App() {
         onAddManualAccount={handleAddManualAccount}
         onUpdateManualBalance={handleUpdateManualBalance}
         onDeleteManualAccount={handleDeleteManualAccount}
-        onRemoveInstitution={handleRemoveInstitution}
+        onRemoveAccount={handleRemoveAccount}
       />
 
       <main className="main-content">
