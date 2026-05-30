@@ -10,6 +10,7 @@ function App() {
   const [transactions, setTransactions] = useState([]);
   const [categories, setCategories] = useState([]);
   const [balances, setBalances] = useState({});
+  const [balancesUpdatedAt, setBalancesUpdatedAt] = useState(null);
   const [manualAccounts, setManualAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -59,6 +60,7 @@ function App() {
       if (res.ok) {
         const data = await res.json();
         setBalances(data);
+        setBalancesUpdatedAt(new Date());
       }
     } catch (err) {
       console.error('Balance fetch error:', err);
@@ -264,6 +266,7 @@ function App() {
       <AccountSidebar
         accounts={accounts}
         balances={balances}
+        balancesUpdatedAt={balancesUpdatedAt}
         manualAccounts={manualAccounts}
         selectedView={selectedView}
         onSelectView={setSelectedView}

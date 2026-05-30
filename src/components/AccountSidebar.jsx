@@ -9,9 +9,19 @@ function formatBalance(amount, type) {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(Math.abs(amount));
-  // Credit cards: positive balance means money owed
   if (type === 'credit' && amount > 0) return `-${formatted}`;
   return formatted;
+}
+
+function formatUpdatedTime(date) {
+  if (!date) return null;
+  const today = new Date();
+  const isToday =
+    date.getDate() === today.getDate() &&
+    date.getMonth() === today.getMonth() &&
+    date.getFullYear() === today.getFullYear();
+  const time = date.toLocaleTimeString('default', { hour: 'numeric', minute: '2-digit' });
+  return isToday ? `Today ${time}` : date.toLocaleDateString('default', { month: 'short', day: 'numeric' }) + ' ' + time;
 }
 
 function ManualAccountsSection({
@@ -47,6 +57,8 @@ function ManualAccountsSection({
     await onUpdateBalance(account_id, editValue);
     setEditingId(null);
   };
+
+  const isLiability = (type) => ['credit', 'mortgage', 'loan'].includes(type);
 
   return (
     <div className="manual-accounts-section">
@@ -94,13 +106,13 @@ function ManualAccountsSection({
           key={acct.account_id}
           className={`account-item manual-account-item ${selectedView === acct.account_id ? 'active' : ''}`}
         >
-          <span
-            className="account-name"
-            onClick={() => onSelectView(acct.account_id)}
-            style={{ cursor: 'pointer', flex: 1 }}
-          >
-            {acct.name}
-          </span>
+          <div className="account-item-inner" onClick={() => onSelectView(acct.account_id)} style={{ cursor: 'pointer', flex: 1, minWidth: 0 }}>
+            <span className="account-name">{acct.name}</span>
+            {acct.last_updated && (
+              <span className="balance-updated">Updated {acct.last_updated}</span>
+            )}
+          </div>
+
           {editingId === acct.account_id ? (
             <div className="manual-balance-edit">
               <input
@@ -120,19 +132,17 @@ function ManualAccountsSection({
           ) : (
             <div className="manual-balance-wrap">
               <span
-                className={`account-balance ${acct.type === 'credit' || acct.type === 'mortgage' || acct.type === 'loan' ? 'balance-negative' : 'balance-positive'}`}
+                className={`account-balance ${isLiability(acct.type) ? 'balance-negative' : 'balance-positive'}`}
                 onClick={() => startEdit(acct)}
                 title="Click to update balance"
               >
-                {formatBalance(acct.balance, acct.type)}
+                {formatBalance(acct.balance, acct.type) ?? '—'}
               </span>
               <button
                 className="manual-delete-btn"
                 onClick={() => onDelete(acct.account_id)}
                 title="Remove account"
-              >
-                ×
-              </button>
+              >×</button>
             </div>
           )}
         </div>
@@ -148,6 +158,7 @@ function ManualAccountsSection({
 function AccountSidebar({
   accounts,
   balances,
+  balancesUpdatedAt,
   manualAccounts,
   selectedView,
   onSelectView,
@@ -156,8 +167,10 @@ function AccountSidebar({
   onUpdateManualBalance,
   onDeleteManualAccount,
 }) {
+  const updatedLabel = formatUpdatedTime(balancesUpdatedAt);
+
   const byInstitution = accounts.reduce((groups, account) => {
-    const key = account.institution_name;
+    const key = account.institution_name || 'Other';
     if (!groups[key]) groups[key] = [];
     groups[key].push(account);
     return groups;
@@ -190,28 +203,37 @@ function AccountSidebar({
 
         <div className="sidebar-divider" />
 
-        {/* Plaid-connected accounts grouped by institution */}
+        {/* Plaid accounts grouped by institution */}
         {Object.entries(byInstitution).map(([institution, accts]) => (
           <div key={institution} className="institution-group">
             <div className="institution-name">{institution}</div>
             {accts.map((account) => {
               const bal = balances[account.account_id];
-              const displayBal = bal
-                ? formatBalance(
-                    account.type === 'credit' ? bal.current : (bal.available ?? bal.current),
-                    account.type
-                  )
-                : null;
+              const rawAmount = account.type === 'credit'
+                ? bal?.current
+                : (bal?.available ?? bal?.current);
+              const displayBal = bal ? formatBalance(rawAmount, account.type) : null;
+
               return (
                 <button
                   key={account.account_id}
                   className={`account-item ${selectedView === account.account_id ? 'active' : ''}`}
                   onClick={() => onSelectView(account.account_id)}
                 >
-                  <span className="account-name">{account.official_name || account.name}</span>
-                  <span className={`account-balance ${account.type === 'credit' ? 'balance-negative' : 'balance-positive'}`}>
-                    {displayBal || <span className="account-mask">••{account.mask}</span>}
-                  </span>
+                  <div className="account-item-inner" style={{ flex: 1, minWidth: 0 }}>
+                    <span className="account-name">{account.official_name || account.name}</span>
+                    {displayBal !== null && updatedLabel && (
+                      <span className="balance-updated">{updatedLabel}</span>
+                    )}
+                    {displayBal === null && (
+                      <span className="account-mask">••{account.mask}</span>
+                    )}
+                  </div>
+                  {displayBal !== null && (
+                    <span className={`account-balance ${account.type === 'credit' ? 'balance-negative' : 'balance-positive'}`}>
+                      {displayBal}
+                    </span>
+                  )}
                 </button>
               );
             })}
