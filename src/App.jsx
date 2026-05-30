@@ -120,14 +120,29 @@ function App() {
   });
 
   // Remove pending transactions that have since settled.
-  // When Plaid settles a pending txn it creates a new transaction whose
-  // pending_transaction_id points back to the old pending row's transaction_id.
-  // We collect all those superseded IDs and exclude them from the display.
+  // Method 1: pending_transaction_id field (works once Make/Sheets column J is set up)
   const supersededIds = new Set(
     uniqueTransactions
       .map((t) => t.pending_transaction_id)
       .filter(Boolean)
   );
+
+  // Method 2: fallback — if a settled transaction exists on the same account
+  // with the same amount within 7 days, treat the pending row as superseded.
+  const settledTxns = uniqueTransactions.filter((t) => !t.pending);
+  uniqueTransactions
+    .filter((t) => t.pending && !supersededIds.has(t.transaction_id))
+    .forEach((pending) => {
+      const pendingDate = new Date(pending.date);
+      const hasSettled = settledTxns.some((s) => {
+        if (s.account_id !== pending.account_id) return false;
+        if (Math.abs(s.amount - pending.amount) > 0.01) return false;
+        const daysDiff = Math.abs(new Date(s.date) - pendingDate) / (1000 * 60 * 60 * 24);
+        return daysDiff <= 7;
+      });
+      if (hasSettled) supersededIds.add(pending.transaction_id);
+    });
+
   const activeTransactions = uniqueTransactions.filter(
     (t) => !supersededIds.has(t.transaction_id)
   );
