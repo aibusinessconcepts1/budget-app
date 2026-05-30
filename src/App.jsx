@@ -150,6 +150,19 @@ function App() {
     }
   };
 
+  const handleRemoveInstitution = async (item_id) => {
+    try {
+      await fetch('/api/remove-institution', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ item_id }),
+      });
+      setRefreshKey((k) => k + 1);
+    } catch (err) {
+      console.error('Remove institution error:', err);
+    }
+  };
+
   useEffect(() => {
     async function fetchData() {
       try {
@@ -274,6 +287,7 @@ function App() {
         onAddManualAccount={handleAddManualAccount}
         onUpdateManualBalance={handleUpdateManualBalance}
         onDeleteManualAccount={handleDeleteManualAccount}
+        onRemoveInstitution={handleRemoveInstitution}
       />
 
       <main className="main-content">

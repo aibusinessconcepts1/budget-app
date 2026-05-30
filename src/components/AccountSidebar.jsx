@@ -30,10 +30,13 @@ function AccountSidebar({
   accounts, balances, balancesUpdatedAt,
   manualAccounts, selectedView, onSelectView, onConnected,
   onAddManualAccount, onUpdateManualBalance, onDeleteManualAccount,
+  onRemoveInstitution,
 }) {
   // ── Drag state ──
   const [dragId, setDragId] = useState(null);
   const [dragOverId, setDragOverId] = useState(null);
+  // ── Remove institution confirmation ──
+  const [confirmRemoveItemId, setConfirmRemoveItemId] = useState(null);
   const [orderIds, setOrderIds] = useState(() => {
     try { return JSON.parse(localStorage.getItem('budget_account_order') || '[]'); }
     catch { return []; }
@@ -185,6 +188,28 @@ function AccountSidebar({
                     </span>
                   )}
                 </button>
+                {confirmRemoveItemId === item.item_id ? (
+                  <div className="plaid-confirm-remove">
+                    <span className="plaid-confirm-label">Remove?</span>
+                    <button
+                      className="plaid-confirm-yes"
+                      onClick={() => {
+                        onRemoveInstitution(item.item_id);
+                        setConfirmRemoveItemId(null);
+                      }}
+                    >Yes</button>
+                    <button
+                      className="plaid-confirm-no"
+                      onClick={() => setConfirmRemoveItemId(null)}
+                    >No</button>
+                  </div>
+                ) : (
+                  <button
+                    className="plaid-remove-btn"
+                    onClick={() => setConfirmRemoveItemId(item.item_id)}
+                    title="Remove this bank connection"
+                  >×</button>
+                )}
               </div>
             );
           }

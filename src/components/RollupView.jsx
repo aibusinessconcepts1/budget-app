@@ -227,6 +227,17 @@ function RollupView({ transactions, accounts, allTransactions = [], plaidBalance
     return groups;
   }, {});
 
+  // ── Bar scale maximums (relative to largest category, not total) ──
+  const maxCategoryTotal = categories.length > 0
+    ? Math.max(...categories.map(([, d]) => d.total))
+    : 1;
+  const maxIncomeCategoryTotal = incomeCategories.length > 0
+    ? Math.max(...incomeCategories.map(([, d]) => d.total))
+    : 1;
+  const maxAccountTotal = Object.values(byAccount).length > 0
+    ? Math.max(...Object.values(byAccount).filter((d) => d.total > 0).map((d) => d.total))
+    : 1;
+
   // ── Drill-down ──
   if (drillDown) {
     return (
@@ -352,14 +363,16 @@ function RollupView({ transactions, accounts, allTransactions = [], plaidBalance
                 <span className="category-name">{cat}</span>
                 <span className="category-count">{data.count} txns</span>
                 <span className="category-amount">{formatAmount(data.total)}</span>
-                <div className="category-bar-wrap">
-                  <div
-                    className="category-bar"
-                    style={{
-                      width: `${(data.total / netExpenses) * 100}%`,
-                      background: CATEGORY_COLORS[i % CATEGORY_COLORS.length],
-                    }}
-                  />
+                <div className="category-bar-cell">
+                  <div className="category-bar-wrap">
+                    <div
+                      className="category-bar"
+                      style={{
+                        width: `${(data.total / maxCategoryTotal) * 100}%`,
+                        background: CATEGORY_COLORS[i % CATEGORY_COLORS.length],
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
             ))}
@@ -368,7 +381,7 @@ function RollupView({ transactions, accounts, allTransactions = [], plaidBalance
 
         <div className="rollup-section">
           <h3 style={{ marginBottom: '16px' }}>Spend by Account</h3>
-          <div className="category-list">
+          <div className="category-list category-list-3col">
             {Object.entries(byAccount)
               .filter(([, data]) => data.total > 0)
               .map(([name, data], i) => (
@@ -380,14 +393,16 @@ function RollupView({ transactions, accounts, allTransactions = [], plaidBalance
                 >
                   <span className="category-name">{name}</span>
                   <span className="category-amount">{formatAmount(data.total)}</span>
-                  <div className="category-bar-wrap" style={{ gridColumn: 'span 1' }}>
-                    <div
-                      className="category-bar"
-                      style={{
-                        width: `${(data.total / netExpenses) * 100}%`,
-                        background: CATEGORY_COLORS[i % CATEGORY_COLORS.length],
-                      }}
-                    />
+                  <div className="category-bar-cell">
+                    <div className="category-bar-wrap">
+                      <div
+                        className="category-bar"
+                        style={{
+                          width: `${(data.total / maxAccountTotal) * 100}%`,
+                          background: CATEGORY_COLORS[i % CATEGORY_COLORS.length],
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
               ))}
@@ -415,14 +430,16 @@ function RollupView({ transactions, accounts, allTransactions = [], plaidBalance
                 <span className="category-name">{cat}</span>
                 <span className="category-count">{data.count} txns</span>
                 <span className="category-amount">{formatAmount(data.total)}</span>
-                <div className="category-bar-wrap">
-                  <div
-                    className="category-bar"
-                    style={{
-                      width: `${(data.total / totalIncome) * 100}%`,
-                      background: CATEGORY_COLORS[i % CATEGORY_COLORS.length],
-                    }}
-                  />
+                <div className="category-bar-cell">
+                  <div className="category-bar-wrap">
+                    <div
+                      className="category-bar"
+                      style={{
+                        width: `${(data.total / maxIncomeCategoryTotal) * 100}%`,
+                        background: CATEGORY_COLORS[i % CATEGORY_COLORS.length],
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
             ))}

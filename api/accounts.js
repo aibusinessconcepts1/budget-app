@@ -20,15 +20,17 @@ export default async function handler(req, res) {
 
     const rows = response.data.values || [];
 
-    const accounts = rows.map((row) => ({
-      account_id: row[0] || '',
-      item_id: row[1] || '',
-      name: row[2] || '',
-      official_name: row[3] || '',
-      type: row[4] || '',
-      subtype: row[5] || '',
-      mask: row[6] || '',
-    }));
+    const accounts = rows
+      .map((row) => ({
+        account_id: row[0] || '',
+        item_id: row[1] || '',
+        name: row[2] || '',
+        official_name: row[3] || '',
+        type: row[4] || '',
+        subtype: row[5] || '',
+        mask: row[6] || '',
+      }))
+      .filter((a) => a.account_id);
 
     res.status(200).json(accounts);
   } catch (err) {
