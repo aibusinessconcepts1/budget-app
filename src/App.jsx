@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import AccountSidebar from './components/AccountSidebar';
 import TransactionList from './components/TransactionList';
 import RollupView from './components/RollupView';
+import BalanceHistoryView from './components/BalanceHistoryView';
 import CategoriesPanel from './components/CategoriesPanel';
 import './App.css';
 
@@ -12,6 +13,7 @@ function App() {
   const [balances, setBalances] = useState({});
   const [balancesUpdatedAt, setBalancesUpdatedAt] = useState(null);
   const [manualAccounts, setManualAccounts] = useState([]);
+  const [balanceHistory, setBalanceHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
@@ -64,6 +66,43 @@ function App() {
       }
     } catch (err) {
       console.error('Balance fetch error:', err);
+    }
+  };
+
+  const saveBalanceSnapshot = async (accts, bals, manualAccts) => {
+    const today = new Date().toISOString().slice(0, 10);
+    const snapshots = [
+      ...accts.map((a) => {
+        const bal = bals[a.account_id];
+        const rawBalance = a.type === 'credit'
+          ? bal?.current
+          : (bal?.available ?? bal?.current);
+        if (rawBalance == null) return null;
+        return {
+          account_id: a.account_id,
+          account_name: a.official_name || a.name,
+          balance: rawBalance,
+          account_type: a.type,
+          source: 'plaid',
+        };
+      }).filter(Boolean),
+      ...manualAccts.map((a) => ({
+        account_id: a.account_id,
+        account_name: a.name,
+        balance: a.balance || 0,
+        account_type: a.type,
+        source: 'manual',
+      })),
+    ];
+    if (snapshots.length === 0) return;
+    try {
+      await fetch('/api/balance-history', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date: today, snapshots }),
+      });
+    } catch (err) {
+      console.error('Snapshot save error:', err);
     }
   };
 
@@ -168,11 +207,12 @@ function App() {
       try {
         setLoading(true);
         const ts = Date.now();
-        const [accountsRes, transactionsRes, categoriesRes, manualRes] = await Promise.all([
+        const [accountsRes, transactionsRes, categoriesRes, manualRes, historyRes] = await Promise.all([
           fetch(`/api/accounts?t=${ts}`),
           fetch(`/api/transactions?t=${ts}`),
           fetch(`/api/categories?t=${ts}`),
           fetch(`/api/manual-accounts?t=${ts}`),
+          fetch(`/api/balance-history?t=${ts}`),
         ]);
 
         if (!accountsRes.ok) throw new Error('Failed to fetch accounts');
@@ -182,11 +222,13 @@ function App() {
         const transactionsData = await transactionsRes.json();
         const categoriesData = categoriesRes.ok ? await categoriesRes.json() : [];
         const manualData = manualRes.ok ? await manualRes.json() : [];
+        const historyData = historyRes.ok ? await historyRes.json() : [];
 
         setAccounts(accountsData);
         setTransactions(transactionsData);
         setCategories(categoriesData);
         setManualAccounts(manualData);
+        setBalanceHistory(historyData);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -197,6 +239,22 @@ function App() {
     fetchData();
     fetchBalances();
   }, [refreshKey]);
+
+  // Auto-save balance snapshot once per day when data is ready
+  useEffect(() => {
+    if (loading || accounts.length === 0 || Object.keys(balances).length === 0) return;
+    const today = new Date().toISOString().slice(0, 10);
+    const lastSave = localStorage.getItem('budget_snapshot_date');
+    if (lastSave === today) return;
+    saveBalanceSnapshot(accounts, balances, manualAccounts).then(() => {
+      localStorage.setItem('budget_snapshot_date', today);
+      // Refresh history state with the new snapshot
+      fetch(`/api/balance-history?t=${Date.now()}`)
+        .then((r) => r.ok ? r.json() : [])
+        .then((data) => setBalanceHistory(data))
+        .catch(() => {});
+    });
+  }, [loading, accounts, balances, manualAccounts]);
 
   // Deduplicate transactions
   const seen = new Set();
@@ -255,6 +313,7 @@ function App() {
   const pageTitle = () => {
     if (selectedView === 'dashboard') return 'Dashboard';
     if (selectedView === 'transactions') return 'All Transactions';
+    if (selectedView === 'balance-history') return 'Month-End Balances';
     return selectedAccount?.official_name || selectedAccount?.name || 'Account';
   };
 
@@ -294,22 +353,26 @@ function App() {
         <header className="main-header">
           <h1>{pageTitle()}</h1>
           <div className="header-actions">
-            <select
-              className="month-select"
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(e.target.value)}
-            >
-              <option value="all">All Time</option>
-              {availableMonths.map((m) => (
-                <option key={m} value={m}>{monthLabel(m)}</option>
-              ))}
-            </select>
-            <button
-              className="categories-btn"
-              onClick={() => setShowCategories(true)}
-            >
-              ☰ Categories
-            </button>
+            {selectedView !== 'balance-history' && (
+              <select
+                className="month-select"
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+              >
+                <option value="all">All Time</option>
+                {availableMonths.map((m) => (
+                  <option key={m} value={m}>{monthLabel(m)}</option>
+                ))}
+              </select>
+            )}
+            {selectedView !== 'balance-history' && (
+              <button
+                className="categories-btn"
+                onClick={() => setShowCategories(true)}
+              >
+                ☰ Categories
+              </button>
+            )}
             {selectedView === 'transactions' && (
               <div className="refresh-wrap">
                 <span className="refresh-range-label">Fetch</span>
@@ -354,7 +417,11 @@ function App() {
           />
         )}
 
-        {selectedView !== 'dashboard' && (
+        {selectedView === 'balance-history' && (
+          <BalanceHistoryView history={balanceHistory} />
+        )}
+
+        {selectedView !== 'dashboard' && selectedView !== 'balance-history' && (
           <TransactionList
             transactions={monthFiltered}
             accounts={accounts}

@@ -1299,6 +1299,153 @@ body {
   text-align: center;
 }
 
+/* ── Balance History View ── */
+.bh-wrap {
+  overflow: hidden;
+}
+
+.bh-table-wrap {
+  overflow-x: auto;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(26,39,68,0.08);
+}
+
+.bh-table {
+  border-collapse: collapse;
+  background: #fff;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.bh-table thead tr {
+  background: #faf8f5;
+  border-bottom: 1px solid #ede8df;
+}
+
+.bh-table th {
+  padding: 12px 18px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #7a8ba8;
+  text-align: right;
+}
+
+.bh-account-col {
+  text-align: left !important;
+  position: sticky;
+  left: 0;
+  background: #faf8f5;
+  z-index: 2;
+  min-width: 180px;
+}
+
+.bh-month-col {
+  min-width: 110px;
+}
+
+.bh-month-label {
+  font-size: 11px;
+}
+
+.bh-as-of {
+  font-size: 10px;
+  font-weight: 400;
+  color: #b0bac8;
+  text-transform: none;
+  letter-spacing: 0;
+  margin-top: 2px;
+}
+
+.bh-table td {
+  padding: 10px 18px;
+  border-bottom: 1px solid #f5f0e8;
+  vertical-align: middle;
+}
+
+.bh-table tr:last-child td {
+  border-bottom: none;
+}
+
+.bh-name-cell {
+  position: sticky;
+  left: 0;
+  background: #fff;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 180px;
+}
+
+.bh-acct-name {
+  color: #2d3f5e;
+  font-weight: 500;
+}
+
+.bh-acct-type {
+  font-size: 10px;
+  color: #b0bac8;
+  text-transform: capitalize;
+}
+
+.bh-amount {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
+.bh-no-data {
+  color: #d0d5e0;
+  font-weight: 400;
+}
+
+.bh-asset {
+  color: #1a7a5e;
+}
+
+.bh-liability {
+  color: #c0392b;
+}
+
+.bh-net-worth-row td {
+  background: #faf8f5;
+  border-top: 2px solid #ede8df;
+  border-bottom: none;
+}
+
+.bh-net-worth-row .bh-name-cell {
+  background: #faf8f5;
+}
+
+.bh-net-worth-val {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.bh-empty-state {
+  background: #fff;
+  border-radius: 12px;
+  padding: 48px 36px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(26,39,68,0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bh-empty-state p {
+  font-size: 14px;
+  color: #7a8ba8;
+}
+
+.bh-empty-state p:first-child {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 16px;
+  color: #1a2744;
+}
+
 /* ── Loading screen ── */
 .loading-screen {
   display: flex;

@@ -139,6 +139,13 @@ function AccountSidebar({
           <span className="nav-icon">≡</span>
           <span className="account-name">All Transactions</span>
         </button>
+        <button
+          className={`account-item nav-item ${selectedView === 'balance-history' ? 'active' : ''}`}
+          onClick={() => onSelectView('balance-history')}
+        >
+          <span className="nav-icon">⊞</span>
+          <span className="account-name">Month-End Balances</span>
+        </button>
 
         <div className="sidebar-divider" />
 
@@ -294,6 +301,7 @@ function AccountSidebar({
                 <option value="checking">Checking</option>
                 <option value="credit">Credit Card</option>
                 <option value="investment">Investment</option>
+                <option value="retirement">Retirement</option>
                 <option value="mortgage">Mortgage</option>
                 <option value="loan">Loan</option>
                 <option value="other">Other</option>
