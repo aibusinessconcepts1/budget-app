@@ -1424,6 +1424,74 @@ body {
   font-size: 14px;
 }
 
+.bh-hint {
+  font-size: 12px;
+  color: #b0bac8;
+  margin-bottom: 10px;
+}
+
+.bh-editable {
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.bh-editable:hover {
+  background: #f5f0e8;
+}
+
+.bh-editing-cell {
+  padding: 6px 10px;
+  min-width: 130px;
+}
+
+.bh-edit-row {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.bh-edit-input {
+  width: 72px;
+  padding: 3px 6px;
+  border: 1px solid #1a2744;
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: 'Inter', sans-serif;
+  outline: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.bh-edit-save {
+  background: #c9a84c;
+  color: #1a2744;
+  border: none;
+  border-radius: 3px;
+  padding: 3px 6px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.bh-edit-save:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.bh-edit-cancel {
+  background: rgba(26,39,68,0.08);
+  color: #7a8ba8;
+  border: none;
+  border-radius: 3px;
+  padding: 3px 6px;
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.bh-edit-cancel:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .bh-empty-state {
   background: #fff;
   border-radius: 12px;

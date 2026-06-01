@@ -69,8 +69,13 @@ function App() {
     }
   };
 
+  const localDateStr = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+
   const saveBalanceSnapshot = async (accts, bals, manualAccts) => {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = localDateStr();
     const snapshots = [
       ...accts.map((a) => {
         const bal = bals[a.account_id];
@@ -189,6 +194,20 @@ function App() {
     }
   };
 
+  const handleUpdateBalanceHistory = async (account_id, account_name, month, balance, account_type, source) => {
+    try {
+      await fetch('/api/balance-history', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ account_id, account_name, month, balance, account_type, source }),
+      });
+      const res = await fetch(`/api/balance-history?t=${Date.now()}`);
+      if (res.ok) setBalanceHistory(await res.json());
+    } catch (err) {
+      console.error('Update balance history error:', err);
+    }
+  };
+
   const handleRemoveAccount = async (account_id) => {
     try {
       await fetch('/api/remove-account', {
@@ -243,7 +262,7 @@ function App() {
   // Auto-save balance snapshot once per day when data is ready
   useEffect(() => {
     if (loading || accounts.length === 0 || Object.keys(balances).length === 0) return;
-    const today = new Date().toISOString().slice(0, 10);
+    const today = localDateStr();
     const lastSave = localStorage.getItem('budget_snapshot_date');
     if (lastSave === today) return;
     saveBalanceSnapshot(accounts, balances, manualAccounts).then(() => {
@@ -418,7 +437,7 @@ function App() {
         )}
 
         {selectedView === 'balance-history' && (
-          <BalanceHistoryView history={balanceHistory} />
+          <BalanceHistoryView history={balanceHistory} onSave={handleUpdateBalanceHistory} />
         )}
 
         {selectedView !== 'dashboard' && selectedView !== 'balance-history' && (
