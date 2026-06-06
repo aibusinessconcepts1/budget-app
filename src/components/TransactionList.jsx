@@ -62,7 +62,7 @@ function TransactionList({ transactions, accounts, categories }) {
   const handleCategoryChange = async (txn, value) => {
     setUserCategories((prev) => ({ ...prev, [txn.transaction_id]: value }));
     try {
-      await fetch('/api/update-user-category', {
+      await fetch('/api/update-transaction', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
