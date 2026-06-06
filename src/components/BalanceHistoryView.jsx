@@ -35,7 +35,7 @@ function generateMonths(from) {
   return months;
 }
 
-export default function BalanceHistoryView({ history, onSave }) {
+export default function BalanceHistoryView({ history, onSave, accounts = [], manualAccounts = [] }) {
   const [editingCell, setEditingCell] = useState(null); // { account_id, month }
   const [editValue, setEditValue] = useState('');
   const [saving, setSaving] = useState(false);
@@ -58,9 +58,10 @@ export default function BalanceHistoryView({ history, onSave }) {
     return result;
   }, [history, months]);
 
-  // Derive all unique accounts from history, most recent name wins
+  // Derive all unique accounts: history rows + any current accounts not yet in history
   const allAccounts = useMemo(() => {
     const seen = new Map();
+    // Seed from history first (most recent name wins)
     for (const row of history) {
       if (!seen.has(row.account_id) || row.date > seen.get(row.account_id).date) {
         seen.set(row.account_id, {
@@ -72,6 +73,30 @@ export default function BalanceHistoryView({ history, onSave }) {
         });
       }
     }
+    // Add any current Plaid accounts not yet in history
+    for (const a of accounts) {
+      if (!seen.has(a.account_id)) {
+        seen.set(a.account_id, {
+          account_id: a.account_id,
+          account_name: a.official_name || a.name,
+          account_type: a.type,
+          source: 'plaid',
+          date: '',
+        });
+      }
+    }
+    // Add any current manual accounts not yet in history
+    for (const a of manualAccounts) {
+      if (!seen.has(a.account_id)) {
+        seen.set(a.account_id, {
+          account_id: a.account_id,
+          account_name: a.name,
+          account_type: a.type,
+          source: 'manual',
+          date: '',
+        });
+      }
+    }
     // Assets first, then liabilities, alphabetical within each group
     return [...seen.values()].sort((a, b) => {
       const aLiab = LIABILITIES.includes(a.account_type) ? 1 : 0;
@@ -79,7 +104,7 @@ export default function BalanceHistoryView({ history, onSave }) {
       if (aLiab !== bLiab) return aLiab - bLiab;
       return a.account_name.localeCompare(b.account_name);
     });
-  }, [history]);
+  }, [history, accounts, manualAccounts]);
 
   // Last snapshot date per month (for header subtitle)
   const lastDateByMonth = useMemo(() => {

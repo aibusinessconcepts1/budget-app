@@ -117,6 +117,9 @@ function AccountSidebar({
   const startEdit = (acct) => { setEditingId(acct.account_id); setEditValue(String(acct.balance)); };
   const saveEdit = async (id) => { await onUpdateManualBalance(id, editValue); setEditingId(null); };
 
+  // ── Account Balances section collapse ──
+  const [balancesOpen, setBalancesOpen] = useState(true);
+
   return (
     <aside className="sidebar">
       <div className="sidebar-header">
@@ -124,7 +127,7 @@ function AccountSidebar({
       </div>
 
       <nav className="account-list">
-        {/* Navigation items */}
+        {/* Top navigation */}
         <button
           className={`account-item nav-item ${selectedView === 'dashboard' ? 'active' : ''}`}
           onClick={() => onSelectView('dashboard')}
@@ -140,17 +143,34 @@ function AccountSidebar({
           <span className="account-name">All Transactions</span>
         </button>
         <button
-          className={`account-item nav-item ${selectedView === 'balance-history' ? 'active' : ''}`}
-          onClick={() => onSelectView('balance-history')}
+          className={`account-item nav-item ${selectedView === 'cashflow' ? 'active' : ''}`}
+          onClick={() => onSelectView('cashflow')}
         >
-          <span className="nav-icon">⊞</span>
-          <span className="account-name">Month-End Balances</span>
+          <span className="nav-icon">⇄</span>
+          <span className="account-name">Weekly Cash Flow</span>
         </button>
 
         <div className="sidebar-divider" />
 
+        {/* Account Balances collapsible section */}
+        <div className="acct-section-header">
+          <button
+            className={`acct-section-title ${selectedView === 'balance-history' ? 'active' : ''}`}
+            onClick={() => onSelectView('balance-history')}
+          >
+            Account Balances
+          </button>
+          <button
+            className="acct-section-toggle"
+            onClick={() => setBalancesOpen((v) => !v)}
+            title={balancesOpen ? 'Collapse' : 'Expand'}
+          >
+            {balancesOpen ? '▾' : '▸'}
+          </button>
+        </div>
+
         {/* Flat draggable account list */}
-        {orderedItems.map((item) => {
+        {balancesOpen && orderedItems.map((item) => {
           const isDragging = dragId === item.account_id;
           const isDragOver = dragOverId === item.account_id;
 
@@ -286,33 +306,35 @@ function AccountSidebar({
           );
         })}
 
-        {/* Add manual account */}
-        <div className="manual-add-section">
-          {!adding ? (
-            <button className="manual-add-trigger" onClick={() => setAdding(true)}>
-              + Add manual account
-            </button>
-          ) : (
-            <div className="manual-add-form">
-              <input className="manual-input" placeholder="Account name" value={newName} onChange={(e) => setNewName(e.target.value)} />
-              <input className="manual-input" placeholder="Balance" type="number" value={newBalance} onChange={(e) => setNewBalance(e.target.value)} />
-              <select className="manual-input" value={newType} onChange={(e) => setNewType(e.target.value)}>
-                <option value="savings">Savings</option>
-                <option value="checking">Checking</option>
-                <option value="credit">Credit Card</option>
-                <option value="investment">Investment</option>
-                <option value="retirement">Retirement</option>
-                <option value="mortgage">Mortgage</option>
-                <option value="loan">Loan</option>
-                <option value="other">Other</option>
-              </select>
-              <div style={{ display: 'flex', gap: '6px' }}>
-                <button className="manual-save-btn" style={{ flex: 1 }} onClick={handleAdd}>Add</button>
-                <button className="manual-cancel-btn" onClick={() => setAdding(false)}>Cancel</button>
+        {/* Add manual account (inside collapsible section) */}
+        {balancesOpen && (
+          <div className="manual-add-section">
+            {!adding ? (
+              <button className="manual-add-trigger" onClick={() => setAdding(true)}>
+                + Add manual account
+              </button>
+            ) : (
+              <div className="manual-add-form">
+                <input className="manual-input" placeholder="Account name" value={newName} onChange={(e) => setNewName(e.target.value)} />
+                <input className="manual-input" placeholder="Balance" type="number" value={newBalance} onChange={(e) => setNewBalance(e.target.value)} />
+                <select className="manual-input" value={newType} onChange={(e) => setNewType(e.target.value)}>
+                  <option value="savings">Savings</option>
+                  <option value="checking">Checking</option>
+                  <option value="credit">Credit Card</option>
+                  <option value="investment">Investment</option>
+                  <option value="retirement">Retirement</option>
+                  <option value="mortgage">Mortgage</option>
+                  <option value="loan">Loan</option>
+                  <option value="other">Other</option>
+                </select>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <button className="manual-save-btn" style={{ flex: 1 }} onClick={handleAdd}>Add</button>
+                  <button className="manual-cancel-btn" onClick={() => setAdding(false)}>Cancel</button>
+                </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </nav>
 
       <div className="sidebar-footer">

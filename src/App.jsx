@@ -3,6 +3,7 @@ import AccountSidebar from './components/AccountSidebar';
 import TransactionList from './components/TransactionList';
 import RollupView from './components/RollupView';
 import BalanceHistoryView from './components/BalanceHistoryView';
+import WeeklyCashFlow from './components/WeeklyCashFlow';
 import CategoriesPanel from './components/CategoriesPanel';
 import './App.css';
 
@@ -14,6 +15,8 @@ function App() {
   const [balancesUpdatedAt, setBalancesUpdatedAt] = useState(null);
   const [manualAccounts, setManualAccounts] = useState([]);
   const [balanceHistory, setBalanceHistory] = useState([]);
+  const [cfRows, setCfRows] = useState([]);
+  const [cfData, setCfData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
@@ -208,6 +211,63 @@ function App() {
     }
   };
 
+  const refreshCf = async () => {
+    const res = await fetch(`/api/cashflow?t=${Date.now()}`);
+    if (res.ok) {
+      const { rows, data } = await res.json();
+      setCfRows(rows || []);
+      setCfData(data || []);
+    }
+  };
+
+  const handleCfSaveCell = async (week_ending, row_id, amount, source) => {
+    await fetch('/api/cashflow', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'save_cell', week_ending, row_id, amount, source }),
+    });
+    await refreshCf();
+  };
+
+  const handleCfLockWeek = async (week_ending, locked) => {
+    await fetch('/api/cashflow', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'lock_week', week_ending, locked }),
+    });
+    await refreshCf();
+  };
+
+  const handleCfSaveConfig = async (key, value) => {
+    await fetch('/api/cashflow', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'save_config', key, value }),
+    });
+    await refreshCf();
+  };
+
+  const handleCfAddRow = async (row_id, label, section, sort_order, keyword) => {
+    await fetch('/api/cashflow', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'add_row', row_id, label, section, sort_order, keyword }),
+    });
+    await refreshCf();
+  };
+
+  const handleCfDeleteRow = async (row_id) => {
+    await fetch('/api/cashflow', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete_row', row_id }),
+    });
+    await refreshCf();
+  };
+
+  const handleCfReorderRows = async (updates) => {
+    await fetch('/api/cashflow', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'reorder_rows', updates }),
+    });
+    await refreshCf();
+  };
+
   const handleRemoveAccount = async (account_id) => {
     try {
       await fetch('/api/remove-account', {
@@ -226,12 +286,13 @@ function App() {
       try {
         setLoading(true);
         const ts = Date.now();
-        const [accountsRes, transactionsRes, categoriesRes, manualRes, historyRes] = await Promise.all([
+        const [accountsRes, transactionsRes, categoriesRes, manualRes, historyRes, cfRes] = await Promise.all([
           fetch(`/api/accounts?t=${ts}`),
           fetch(`/api/transactions?t=${ts}`),
           fetch(`/api/categories?t=${ts}`),
           fetch(`/api/manual-accounts?t=${ts}`),
           fetch(`/api/balance-history?t=${ts}`),
+          fetch(`/api/cashflow?t=${ts}`),
         ]);
 
         if (!accountsRes.ok) throw new Error('Failed to fetch accounts');
@@ -242,12 +303,15 @@ function App() {
         const categoriesData = categoriesRes.ok ? await categoriesRes.json() : [];
         const manualData = manualRes.ok ? await manualRes.json() : [];
         const historyData = historyRes.ok ? await historyRes.json() : [];
+        const cfPayload  = cfRes.ok     ? await cfRes.json()     : { rows: [], data: [] };
 
         setAccounts(accountsData);
         setTransactions(transactionsData);
         setCategories(categoriesData);
         setManualAccounts(manualData);
         setBalanceHistory(historyData);
+        setCfRows(cfPayload.rows || []);
+        setCfData(cfPayload.data || []);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -333,8 +397,11 @@ function App() {
     if (selectedView === 'dashboard') return 'Dashboard';
     if (selectedView === 'transactions') return 'All Transactions';
     if (selectedView === 'balance-history') return 'Month-End Balances';
+    if (selectedView === 'cashflow') return 'Weekly Cash Flow';
     return selectedAccount?.official_name || selectedAccount?.name || 'Account';
   };
+
+  const hideHeaderControls = selectedView === 'balance-history' || selectedView === 'cashflow';
 
   if (loading) {
     return (
@@ -372,7 +439,7 @@ function App() {
         <header className="main-header">
           <h1>{pageTitle()}</h1>
           <div className="header-actions">
-            {selectedView !== 'balance-history' && (
+            {!hideHeaderControls && (
               <select
                 className="month-select"
                 value={selectedMonth}
@@ -384,7 +451,7 @@ function App() {
                 ))}
               </select>
             )}
-            {selectedView !== 'balance-history' && (
+            {!hideHeaderControls && (
               <button
                 className="categories-btn"
                 onClick={() => setShowCategories(true)}
@@ -437,10 +504,30 @@ function App() {
         )}
 
         {selectedView === 'balance-history' && (
-          <BalanceHistoryView history={balanceHistory} onSave={handleUpdateBalanceHistory} />
+          <BalanceHistoryView
+            history={balanceHistory}
+            onSave={handleUpdateBalanceHistory}
+            accounts={accounts}
+            manualAccounts={manualAccounts}
+          />
         )}
 
-        {selectedView !== 'dashboard' && selectedView !== 'balance-history' && (
+        {selectedView === 'cashflow' && (
+          <WeeklyCashFlow
+            transactions={activeTransactions}
+            accounts={accounts}
+            cfRows={cfRows}
+            cfData={cfData}
+            onSaveCell={handleCfSaveCell}
+            onLockWeek={handleCfLockWeek}
+            onSaveConfig={handleCfSaveConfig}
+            onAddRow={handleCfAddRow}
+            onDeleteRow={handleCfDeleteRow}
+            onReorderRows={handleCfReorderRows}
+          />
+        )}
+
+        {selectedView !== 'dashboard' && selectedView !== 'balance-history' && selectedView !== 'cashflow' && (
           <TransactionList
             transactions={monthFiltered}
             accounts={accounts}
