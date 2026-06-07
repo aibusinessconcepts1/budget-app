@@ -77,9 +77,12 @@ function RollupView({ transactions, accounts, allTransactions = [], plaidBalance
   const positives = loanTxns.filter((t) => t.amount > 0);
   const negatives = loanTxns.filter((t) => t.amount < 0);
   for (const pos of positives) {
+    // Only treat as internal transfer when the offset is in a DIFFERENT connected account
+    // (same-account pairs and unmatched transactions are real expenses and should appear)
     const match = negatives.find(
       (neg) =>
         Math.abs(neg.amount) === pos.amount &&
+        neg.account_id !== pos.account_id &&
         !matchedIds.has(neg.transaction_id) &&
         Math.abs(new Date(pos.date) - new Date(neg.date)) <= 5 * 24 * 60 * 60 * 1000
     );

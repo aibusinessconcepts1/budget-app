@@ -31,7 +31,7 @@ const DEFAULT_ROWS = [
   ['transfer_savings', 'Savings',           'transfer',    '50', 'SAVINGS',                               'TRUE'],
   ['transfer_other',   'Other',             'transfer',    '51', '',                                       'TRUE'],
   // Config rows: section = _config, label = value
-  ['_cfg_opening_balance', '8745',       '_config', '0', '', 'TRUE'],
+  ['_cfg_opening_balance', '9040',       '_config', '0', '', 'TRUE'],
   ['_cfg_opening_date',    '2026-05-01', '_config', '0', '', 'TRUE'],
   ['_cfg_threshold',       '1000',       '_config', '0', '', 'TRUE'],
 ];
@@ -216,6 +216,31 @@ export default async function handler(req, res) {
             });
           }
         }));
+        return res.status(200).json({ ok: true });
+      }
+
+      // Update a row's keyword (and optionally label)
+      if (action === 'update_row') {
+        const { row_id, keyword, label } = body;
+        const rowsRes = await sheets.spreadsheets.values.get({
+          spreadsheetId, range: `${ROWS_SHEET}!A2:F`,
+        });
+        const rows = rowsRes.data.values || [];
+        const idx = rows.findIndex((r) => r[0] === row_id);
+        if (idx >= 0) {
+          if (keyword !== undefined) {
+            await sheets.spreadsheets.values.update({
+              spreadsheetId, range: `${ROWS_SHEET}!E${idx + 2}`,
+              valueInputOption: 'RAW', requestBody: { values: [[keyword]] },
+            });
+          }
+          if (label !== undefined) {
+            await sheets.spreadsheets.values.update({
+              spreadsheetId, range: `${ROWS_SHEET}!B${idx + 2}`,
+              valueInputOption: 'RAW', requestBody: { values: [[label]] },
+            });
+          }
+        }
         return res.status(200).json({ ok: true });
       }
 

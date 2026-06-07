@@ -260,6 +260,14 @@ function App() {
     await refreshCf();
   };
 
+  const handleCfUpdateRow = async (row_id, keyword) => {
+    await fetch('/api/cashflow', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'update_row', row_id, keyword }),
+    });
+    await refreshCf();
+  };
+
   const handleCfReorderRows = async (updates) => {
     await fetch('/api/cashflow', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -524,6 +532,7 @@ function App() {
             onAddRow={handleCfAddRow}
             onDeleteRow={handleCfDeleteRow}
             onReorderRows={handleCfReorderRows}
+            onUpdateRow={handleCfUpdateRow}
           />
         )}
 
