@@ -260,6 +260,14 @@ function App() {
     await refreshCf();
   };
 
+  const handleCfClearCell = async (week_ending, row_id) => {
+    await fetch('/api/cashflow', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'clear_cell', week_ending, row_id }),
+    });
+    await refreshCf();
+  };
+
   const handleCfUpdateRow = async (row_id, keyword) => {
     await fetch('/api/cashflow', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -533,6 +541,7 @@ function App() {
             onDeleteRow={handleCfDeleteRow}
             onReorderRows={handleCfReorderRows}
             onUpdateRow={handleCfUpdateRow}
+            onClearCell={handleCfClearCell}
           />
         )}
 

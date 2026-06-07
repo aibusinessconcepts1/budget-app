@@ -83,7 +83,7 @@ function matchesKeyword(txn, keyword) {
 
 export default function WeeklyCashFlow({
   transactions, accounts, cfRows, cfData,
-  onSaveCell, onLockWeek, onSaveConfig, onAddRow, onDeleteRow, onReorderRows, onUpdateRow,
+  onSaveCell, onClearCell, onLockWeek, onSaveConfig, onAddRow, onDeleteRow, onReorderRows, onUpdateRow,
 }) {
   // ── Config from special rows ──────────────────────────────────────────────
   const config = useMemo(() => {
@@ -215,9 +215,12 @@ export default function WeeklyCashFlow({
     if (!editing || saving) return;
     setSaving(true);
     try {
-      const amount = parseFloat(editVal) || 0;
+      const amount = parseFloat(editVal);
       if (editing.rowId === '_OPENING') {
-        await onSaveConfig('_cfg_opening_balance', String(amount));
+        await onSaveConfig('_cfg_opening_balance', String(isNaN(amount) ? 0 : amount));
+      } else if (!editVal.trim() || isNaN(amount) || amount === 0) {
+        // Empty or zero → remove the stored override, leave the cell blank
+        await onClearCell(editing.week, editing.rowId);
       } else {
         await onSaveCell(editing.week, editing.rowId, amount, 'manual');
       }
@@ -228,24 +231,26 @@ export default function WeeklyCashFlow({
   const [dragCell, setDragCell] = useState(null); // { rowId, value }
   const [dragOverCell, setDragOverCell] = useState(null); // { week, rowId }
 
-  const handleCellDragStart = (e, rowId, value) => {
-    setDragCell({ rowId, value });
-    e.dataTransfer.effectAllowed = 'copy';
+  const handleCellDragStart = (e, week, rowId, value) => {
+    setDragCell({ sourceWeek: week, rowId, value });
+    e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', String(value || 0));
   };
   const handleCellDragOver = (e, week, rowId) => {
     if (!dragCell || dragCell.rowId !== rowId) return;
     e.preventDefault();
-    e.dataTransfer.dropEffect = 'copy';
+    e.dataTransfer.dropEffect = 'move';
     setDragOverCell({ week, rowId });
   };
   const handleCellDrop = async (e, week, rowId) => {
     e.preventDefault();
-    if (!dragCell || dragCell.rowId !== rowId || lockedWeeks.has(week)) {
-      setDragCell(null); setDragOverCell(null); return;
-    }
-    await onSaveCell(week, rowId, dragCell.value || 0, 'manual');
+    const src = dragCell;
     setDragCell(null); setDragOverCell(null);
+    if (!src || src.rowId !== rowId || lockedWeeks.has(week) || week === src.sourceWeek) return;
+    // Save value to target week
+    await onSaveCell(week, rowId, src.value || 0, 'manual');
+    // Clear the source week (move, not copy)
+    await onClearCell(src.sourceWeek, rowId);
   };
   const handleCellDragEnd = () => { setDragCell(null); setDragOverCell(null); };
 
@@ -512,7 +517,7 @@ export default function WeeklyCashFlow({
                           draggable={!isLocked && val != null}
                           onClick={() => !isLocked && startEdit(week, row.row_id, val)}
                           onContextMenu={e => !isLocked && handleCellRightClick(e, week, row.row_id, val)}
-                          onDragStart={e => !isLocked && handleCellDragStart(e, row.row_id, val)}
+                          onDragStart={e => !isLocked && handleCellDragStart(e, week, row.row_id, val)}
                           onDragOver={e => handleCellDragOver(e, week, row.row_id)}
                           onDrop={e => handleCellDrop(e, week, row.row_id)}
                           onDragEnd={handleCellDragEnd}

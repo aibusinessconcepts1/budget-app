@@ -219,6 +219,23 @@ export default async function handler(req, res) {
         return res.status(200).json({ ok: true });
       }
 
+      // Clear a single cell value (removes the stored override entirely)
+      if (action === 'clear_cell') {
+        const { week_ending, row_id } = body;
+        const dataRes = await sheets.spreadsheets.values.get({
+          spreadsheetId, range: `${DATA_SHEET}!A2:D`,
+        });
+        const rows = dataRes.data.values || [];
+        await Promise.all(rows.map(async (row, i) => {
+          if (row[0] === week_ending && row[1] === row_id) {
+            await sheets.spreadsheets.values.clear({
+              spreadsheetId, range: `${DATA_SHEET}!A${i + 2}:D${i + 2}`,
+            });
+          }
+        }));
+        return res.status(200).json({ ok: true });
+      }
+
       // Update a row's keyword (and optionally label)
       if (action === 'update_row') {
         const { row_id, keyword, label } = body;
