@@ -72,17 +72,25 @@ function RollupView({ transactions, accounts, allTransactions = [], plaidBalance
     return true;
   });
 
+  // Build a map of account_id → type so we can identify credit card accounts
+  const accountTypeMap = {};
+  accounts.forEach((a) => { accountTypeMap[a.account_id] = a.type; });
+
   const loanTxns = unique.filter((t) => (t.category || '').toLowerCase().includes('loan'));
   const matchedIds = new Set();
   const positives = loanTxns.filter((t) => t.amount > 0);
   const negatives = loanTxns.filter((t) => t.amount < 0);
   for (const pos of positives) {
-    // Only treat as internal transfer when the offset is in a DIFFERENT connected account
-    // (same-account pairs and unmatched transactions are real expenses and should appear)
+    // Only treat as an internal transfer when:
+    //   1. The negative is in a DIFFERENT account, AND
+    //   2. That account is a credit card (type === 'credit')
+    // This prevents mortgage/car-loan/personal-loan payments being
+    // swallowed by unrelated same-amount loan entries in other accounts.
     const match = negatives.find(
       (neg) =>
         Math.abs(neg.amount) === pos.amount &&
         neg.account_id !== pos.account_id &&
+        accountTypeMap[neg.account_id] === 'credit' &&
         !matchedIds.has(neg.transaction_id) &&
         Math.abs(new Date(pos.date) - new Date(neg.date)) <= 5 * 24 * 60 * 60 * 1000
     );
