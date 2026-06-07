@@ -20,12 +20,9 @@ function TransactionList({ transactions, accounts, categories }) {
     return true;
   });
 
-  // Filter out loan payments (credit card payments) and sort newest first
+  // Sort newest first — all transactions are shown; internal-transfer
+  // filtering only happens in the Dashboard rollup view (RollupView.jsx)
   const filtered = unique
-    .filter((t) => {
-      const cat = (t.category || '').toLowerCase();
-      return !cat.includes('loan');
-    })
     .sort((a, b) => new Date(b.date) - new Date(a.date));
 
   const totalSpend = filtered.reduce((sum, t) => sum + t.amount, 0);
